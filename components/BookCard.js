@@ -1,0 +1,59 @@
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+
+export default function BookCard({ title, author, rating, image }) {
+  return (
+    <View style={styles.card}>
+      <Image source={image} style={styles.bookImage} />
+      <Text style={styles.bookTitle}>{title}</Text>
+      <Text style={styles.bookAuthor}>{author}</Text>
+      <View style={styles.rating}>
+        <Image source={require('../assets/icons/star.png')} style={styles.star} />
+        <Text style={styles.ratingText}>{rating}</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    width: '48%',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bookImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  bookTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  bookAuthor: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  rating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  star: {
+    width: 14,
+    height: 14,
+    marginRight: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#6366F1',
+  },
+});
