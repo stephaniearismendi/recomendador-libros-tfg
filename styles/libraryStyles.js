@@ -18,6 +18,17 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: '500',
     color: '#1F2937',
+    fontFamily: 'Poppins-Medium',
+  },
+  title: {
+  fontFamily: 'Poppins-Bold',
+  fontSize: 28,
+  color: '#3b5998',
+  },
+  subtitle: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 18,
+    color: '#222',
   },
   avatar: {
     width: 32,

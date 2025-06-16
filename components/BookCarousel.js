@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 
-export default function BookCarousel({ title, books }) {
+export default function BookCarousel({ title, books, titleStyle, bookTitleStyle, authorStyle }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={[styles.sectionTitle, titleStyle]}>{title}</Text>
         <Text style={styles.seeAll}>See All</Text>
       </View>
       <FlatList
@@ -16,8 +16,8 @@ export default function BookCarousel({ title, books }) {
         renderItem={({ item }) => (
           <View style={styles.book}>
             <Image source={item.image} style={styles.cover} />
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.author}>{item.author}</Text>
+            <Text style={[styles.title, bookTitleStyle]}>{item.title}</Text>
+            <Text style={[styles.author, authorStyle]}>{item.author}</Text>
           </View>
         )}
       />

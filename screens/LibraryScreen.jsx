@@ -11,24 +11,45 @@ export default function LibraryScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Header greeting="Hi, Alex" />
-        <CurrentlyReadingCard
-          book={{
-            title: 'Project Hail Mary',
-            author: 'Andy Weir',
-            chapter: 'Chapter 7 of 24',
-            progress: 29,
-            timeLeft: '12min left',
-            image: require('../assets/books/project-hail-mary.jpg'),
-          }}
-        />
-        <StatsRow stats={{ read: 12, time: '48h', toRead: 4 }} />
-        <BookCarousel title="Recommended for You" books={[
-          { title: 'Dune', author: 'Frank Herbert', image: require('../assets/books/dune.jpg') },
-          { title: 'Foundation', author: 'Isaac Asimov', image: require('../assets/books/foundation.jpg') },
-          { title: 'Neuromancer', author: 'William Gibson', image: require('../assets/books/neuromancer.jpg') },
-        ]} />
-        <ReadingChallenge title="Read 20 Books in 2025" current={12} total={20} />
+        <Header greeting="¡Hola, Alex!" greetingStyle={styles.greeting} />
+        <View style={styles.section}>
+          <CurrentlyReadingCard
+            book={{
+              title: 'Project Hail Mary',
+              author: 'Andy Weir',
+              chapter: 'Capítulo 7 de 24',
+              progress: 29,
+              timeLeft: '12min restantes',
+              image: require('../assets/books/project-hail-mary.jpg'),
+            }}
+            titleStyle={styles.title}
+            authorStyle={styles.subtitle}
+          />
+        </View>
+        <View style={styles.section}>
+          <StatsRow stats={{ read: 12, time: '48h', toRead: 4 }} labelStyle={styles.subtitle} />
+        </View>
+        <View style={styles.section}>
+          <BookCarousel
+            title="Recomendados para ti"
+            titleStyle={styles.title}
+            bookTitleStyle={styles.subtitle}
+            authorStyle={styles.subtitle}
+            books={[
+              { title: 'Dune', author: 'Frank Herbert', image: require('../assets/books/dune.jpg') },
+              { title: 'Foundation', author: 'Isaac Asimov', image: require('../assets/books/foundation.jpg') },
+              { title: 'Neuromancer', author: 'William Gibson', image: require('../assets/books/neuromancer.jpg') },
+            ]}
+          />
+        </View>
+        <View style={styles.section}>
+          <ReadingChallenge
+            title="Reto: leer 20 libros en 2025"
+            titleStyle={styles.title}
+            current={12}
+            total={20}
+          />
+        </View>
       </ScrollView>
     </View>
   );

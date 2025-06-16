@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function Selector({ label }) {
   return (
     <View style={styles.selector}>
       <Text style={styles.selectorText}>{label}</Text>
-      <Image
-        source={require('../assets/icons/down-arrow.png')}
+      <MaterialIcons
+        name="keyboard-arrow-down"
+        size={28}
+        color="#6B7280"
         style={styles.selectorIcon}
       />
     </View>
@@ -31,8 +34,6 @@ const styles = StyleSheet.create({
   selectorIcon: {
     position: 'absolute',
     right: 12,
-    top: 7,
-    width: 32,
-    height: 32,
+    top: 10,
   },
 });

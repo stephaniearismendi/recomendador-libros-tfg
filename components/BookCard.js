@@ -1,17 +1,28 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 
-export default function BookCard({ title, author, rating, image }) {
+export default function BookCard({ title, author, rating, image, description }) {
+  const navigation = useNavigation();
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate('BookDetail', {
+          book: { title, author, rating, image, description },
+        })
+      }
+    >
       <Image source={image} style={styles.bookImage} />
       <Text style={styles.bookTitle}>{title}</Text>
       <Text style={styles.bookAuthor}>{author}</Text>
       <View style={styles.rating}>
-        <Image source={require('../assets/icons/star.png')} style={styles.star} />
+        <MaterialIcons name="star" size={14} color="#FFD700" style={styles.star} />
         <Text style={styles.ratingText}>{rating}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -48,8 +59,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   star: {
-    width: 14,
-    height: 14,
     marginRight: 4,
   },
   ratingText: {
