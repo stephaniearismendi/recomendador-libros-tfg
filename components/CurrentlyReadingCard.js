@@ -30,9 +30,12 @@ export default function CurrentlyReadingCard({ book }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#E7ECFD',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 0, 
+    width: '100%',   
+    alignSelf: 'center',
+    elevation: 0,
   },
   sectionTitle: {
     fontWeight: '600',
@@ -52,10 +55,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cover: {
-    width: 50,
-    height: 70,
-    borderRadius: 4,
-    marginRight: 12,
+    width: 70,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 16,
   },
   info: {
     flex: 1,

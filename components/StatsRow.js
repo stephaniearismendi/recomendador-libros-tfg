@@ -3,10 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 
 export default function StatsRow({ stats }) {
   return (
-    <View style={styles.container}>
-      <Stat label="Books Read" value={stats.read} />
-      <Stat label="Reading Time" value={stats.time} />
-      <Stat label="To Read" value={stats.toRead} />
+    <View style={styles.card}>
+      <Stat label="Leídos" value={stats.read} />
+      <Stat label="Tiempo" value={stats.time} />
+      <Stat label="Por leer" value={stats.toRead} />
     </View>
   );
 }
@@ -21,21 +21,32 @@ function Stat({ label, value }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    marginBottom: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   stat: {
     alignItems: 'center',
+    flex: 1,
   },
   value: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#1F2937',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    color: '#3b5998',
+    marginBottom: 2,
   },
   label: {
-    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
     color: '#6B7280',
   },
 });

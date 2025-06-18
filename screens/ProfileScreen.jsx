@@ -1,7 +1,10 @@
-import React from 'react';
-import { View, Text, Image, Button, StyleSheet } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, Image, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 
 export default function ProfileScreen() {
+  const { logout } = useContext(AuthContext);
+
   return (
     <View style={styles.background}>
       <View style={styles.card}>
@@ -19,6 +22,9 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Button title="Editar perfil" onPress={() => {}} />
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -78,5 +84,20 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 14,
     color: '#888',
+  },
+  logoutButton: {
+    marginTop: 18,
+    backgroundColor: '#fff',
+    borderColor: '#e63946',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#e63946',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

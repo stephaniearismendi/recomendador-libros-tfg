@@ -10,37 +10,43 @@ export default function ReadingChallenge({ title, current, total }) {
       <View style={styles.progressBar}>
         <View style={[styles.progress, { width: `${progress}%` }]} />
       </View>
-      <Text style={styles.progressText}>{`${current}/${total}`}</Text>
+      <Text style={styles.progressText}>{`${current} / ${total} libros leídos`}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 30,
+    borderRadius: 0,           
+    padding: 0,                
+    marginBottom: 0,           
+    shadowColor: 'transparent',
+    elevation: 0,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    fontSize: 18,
+    fontFamily: 'Poppins-Bold',
+    color: '#3b5998',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   progressBar: {
     backgroundColor: '#E5E7EB',
-    height: 8,
+    height: 14,
     borderRadius: 20,
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 10,
   },
   progress: {
-    height: 8,
+    height: 14,
     backgroundColor: '#F59E0B',
+    borderRadius: 20,
   },
   progressText: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'right',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginTop: 2,
   },
 });

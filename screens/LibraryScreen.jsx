@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, SafeAreaView } from 'react-native';
 import Header from '../components/Header';
 import CurrentlyReadingCard from '../components/CurrentlyReadingCard';
 import StatsRow from '../components/StatsRow';
@@ -9,10 +9,10 @@ import styles from '../styles/libraryStyles';
 
 export default function LibraryScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Header greeting="¡Hola, Alex!" greetingStyle={styles.greeting} />
-        <View style={styles.section}>
+        <View style={styles.currentlySection}>
           <CurrentlyReadingCard
             book={{
               title: 'Project Hail Mary',
@@ -51,6 +51,6 @@ export default function LibraryScreen() {
           />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

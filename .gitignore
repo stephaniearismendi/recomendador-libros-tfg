@@ -31,7 +31,18 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.local
+.gitignore
+.env
+config.js
 
 # typescript
 *.tsbuildinfo
+
+# IDEs
+.idea/
+.vscode/
+
+# formatting
+.prettierrc
+.eslintrc.*

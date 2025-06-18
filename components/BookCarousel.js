@@ -1,23 +1,28 @@
 import React from 'react';
-import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
+import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function BookCarousel({ title, books, titleStyle, bookTitleStyle, authorStyle }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.sectionTitle, titleStyle]}>{title}</Text>
-        <Text style={styles.seeAll}>See All</Text>
+        <TouchableOpacity style={styles.seeAllBtn}>
+          <Text style={styles.seeAllText}>Ver todo</Text>
+          <MaterialIcons name="arrow-forward-ios" size={14} color="#6366F1" />
+        </TouchableOpacity>
       </View>
       <FlatList
         data={books}
         keyExtractor={(item) => item.title}
         horizontal
         showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 4 }}
         renderItem={({ item }) => (
-          <View style={styles.book}>
+          <View style={styles.bookCard}>
             <Image source={item.image} style={styles.cover} />
-            <Text style={[styles.title, bookTitleStyle]}>{item.title}</Text>
-            <Text style={[styles.author, authorStyle]}>{item.author}</Text>
+            <Text style={[styles.title, bookTitleStyle]} numberOfLines={2}>{item.title}</Text>
+            <Text style={[styles.author, authorStyle]} numberOfLines={1}>{item.author}</Text>
           </View>
         )}
       />
@@ -27,38 +32,63 @@ export default function BookCarousel({ title, books, titleStyle, bookTitleStyle,
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 2,
   },
   sectionTitle: {
-    fontWeight: '600',
-    fontSize: 16,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    color: '#3b5998',
   },
-  seeAll: {
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  seeAllText: {
     color: '#6366F1',
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    marginRight: 2,
   },
-  book: {
-    marginRight: 12,
-    width: 100,
+  bookCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 12,
+    marginRight: 16,
+    width: 124, // Más ancho para evitar cortes
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cover: {
     width: 100,
-    height: 140,
+    height: 145,
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: 12, 
+    backgroundColor: '#e0e0e0',
   },
   title: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 15, 
+    fontFamily: 'Poppins-Bold',
+    color: '#222', 
+    textAlign: 'center',
+    marginBottom: 4,
   },
   author: {
-    fontSize: 11,
+    fontSize: 12, 
+    fontFamily: 'Poppins-Regular',
     color: '#6B7280',
+    textAlign: 'center',
   },
 });

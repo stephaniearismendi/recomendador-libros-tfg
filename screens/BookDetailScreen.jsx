@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -8,7 +8,7 @@ export default function BookDetailScreen({ route }) {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <MaterialIcons name="arrow-back" size={28} color="#3b5998" />
       </TouchableOpacity>
@@ -27,7 +27,7 @@ export default function BookDetailScreen({ route }) {
         <MaterialIcons name="favorite-border" size={22} color="#e63946" />
         <Text style={styles.favButtonText}>Agregar a Favoritos</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

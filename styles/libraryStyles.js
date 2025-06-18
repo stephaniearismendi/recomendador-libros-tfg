@@ -6,13 +6,31 @@ export default StyleSheet.create({
     backgroundColor: '#FAF8F5',
   },
   scroll: {
-    padding: 20,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 18,
+  },
+  screenTitle: {
+    fontSize: 30,
+    fontFamily: 'Poppins-Bold',
+    color: '#3b5998',
+    marginBottom: 18,
+    marginLeft: 4,
+  },
+  section: {
+    marginBottom: 28,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   greeting: {
     fontSize: 20,
@@ -21,9 +39,9 @@ export default StyleSheet.create({
     fontFamily: 'Poppins-Medium',
   },
   title: {
-  fontFamily: 'Poppins-Bold',
-  fontSize: 28,
-  color: '#3b5998',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 28,
+    color: '#3b5998',
   },
   subtitle: {
     fontFamily: 'Poppins-Regular',
@@ -50,5 +68,8 @@ export default StyleSheet.create({
   inactiveTab: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  currentlySection: {
+    marginBottom: 28,
   },
 });

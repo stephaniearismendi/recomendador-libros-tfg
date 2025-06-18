@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView } from 'react-native';
 import GenreFilter from '../components/GenreFilter';
 import Selector from '../components/Selector';
 import BookCard from '../components/BookCard';
@@ -22,7 +22,7 @@ const books = [
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.heading}>Explora lecturas</Text>
         <Text style={styles.subheading}>Encuentra el próximo libro que te atrape</Text>
@@ -40,6 +40,6 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

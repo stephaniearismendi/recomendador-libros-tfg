@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Image, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, FlatList, Image, StyleSheet } from 'react-native';
 
 const favoriteBooks = [
   { title: 'Dune', author: 'Frank Herbert', image: require('../assets/books/dune.jpg') },
@@ -9,7 +9,7 @@ const favoriteBooks = [
 
 export default function FavoritesScreen() {
   return (
-    <View style={styles.background}>
+    <SafeAreaView style={styles.background}>
       <Text style={styles.title}>Mis Favoritos</Text>
       <FlatList
         data={favoriteBooks}
@@ -26,14 +26,14 @@ export default function FavoritesScreen() {
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#f4f6fb',
+    backgroundColor: '#FAF8F5', // Paleta consistente
     paddingTop: 40,
     paddingHorizontal: 16,
   },
@@ -70,13 +70,13 @@ const styles = StyleSheet.create({
   bookTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'Poppins-Bold', 
+    fontFamily: 'Poppins-Bold',
     marginBottom: 4,
     color: '#222',
   },
   author: {
     fontSize: 15,
-    fontFamily: 'Poppins-Regular', 
+    fontFamily: 'Poppins-Regular',
     color: '#888',
   },
 });
