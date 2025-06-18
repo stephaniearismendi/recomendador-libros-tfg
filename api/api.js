@@ -1,28 +1,36 @@
 import axios from 'axios';
 import { API_URL } from '../config';
 
-export const register = async (userData) => {
-  return axios.post(`${API_URL}/users/register`, userData);
-};
+const authHeaders = (token) => ({
+  headers: { Authorization: `Bearer ${token}` },
+});
 
-export const login = async (credentials) => {
-  return axios.post(`${API_URL}/users/login`, credentials);
-};
+// Auth
+export const register = (userData) =>
+  axios.post(`${API_URL}/users/register`, userData);
 
-export const getBooks = async (token) => {
-  return axios.get(`${API_URL}/books`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
+export const login = (credentials) =>
+  axios.post(`${API_URL}/users/login`, credentials);
 
-export const addFavorite = async (userId, bookId, token) => {
-  return axios.post(`${API_URL}/favorites`, { userId, bookId }, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
+// Libros
+export const getBooks = (token) =>
+  axios.get(`${API_URL}/books`, authHeaders(token));
 
-export const removeFavorite = async (userId, bookId, token) => {
-  return axios.delete(`${API_URL}/favorites/${userId}/${bookId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
+export const searchBooks = (query = 'bestsellers') =>
+  axios.get(`${API_URL}/books/search?q=${encodeURIComponent(query)}`);
+
+export const getPopularBooks = () =>
+  axios.get(`${API_URL}/books/popular`);
+
+export const getBooksByGenre = (genre) =>
+  axios.get(`${API_URL}/books/genre?g=${encodeURIComponent(genre)}`);
+
+// Favoritos
+export const getFavorites = (userId, token) =>
+  axios.get(`${API_URL}/books/favorites/${userId}`, authHeaders(token));
+
+export const addFavorite = (userId, bookId, token) =>
+  axios.post(`${API_URL}/books/favorites`, { userId, bookId }, authHeaders(token));
+
+export const removeFavorite = (userId, bookId, token) =>
+  axios.delete(`${API_URL}/books/favorites/${userId}/${bookId}`, authHeaders(token));

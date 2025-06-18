@@ -5,7 +5,6 @@ export default function BookSection({ title, books }) {
   return (
     <View style={sectionStyles.container}>
       <Text style={sectionStyles.title}>{title}</Text>
-      {/* Mapear libros reales aquí si los tienes */}
       <View style={sectionStyles.bookRow}>
         <Image source={require('../assets/books/los-juegos-del-hambre.jpg')} style={sectionStyles.cover} />
         <View>

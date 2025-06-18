@@ -19,11 +19,11 @@ export default function BookCarousel({ title, books, titleStyle, bookTitleStyle,
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: 4 }}
         renderItem={({ item }) => (
-          <View style={styles.bookCard}>
-            <Image source={item.image} style={styles.cover} />
-            <Text style={[styles.title, bookTitleStyle]} numberOfLines={2}>{item.title}</Text>
-            <Text style={[styles.author, authorStyle]} numberOfLines={1}>{item.author}</Text>
-          </View>
+        <View style={styles.card}>
+          <Image source={item.image} style={styles.bookImage} />
+          <Text style={styles.bookTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.bookAuthor} numberOfLines={1}>{item.author}</Text>
+        </View>
         )}
       />
     </View>
@@ -59,36 +59,42 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     marginRight: 2,
   },
-  bookCard: {
+card: {
     backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
     marginRight: 16,
-    width: 124, // Más ancho para evitar cortes
+    width: 120,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 2,
+    overflow: 'hidden',
   },
-  cover: {
-    width: 100,
-    height: 145,
+  bookImage: {
+    width: 92,
+    height: 132,
     borderRadius: 8,
-    marginBottom: 12, 
+    marginBottom: 6,
     backgroundColor: '#e0e0e0',
+    alignSelf: 'center',
   },
-  title: {
-    fontSize: 15, 
+  bookTitle: {
+    fontSize: 14,
     fontFamily: 'Poppins-Bold',
-    color: '#222', 
+    color: '#222',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
+    marginTop: 0,
   },
-  author: {
-    fontSize: 12, 
+  bookAuthor: {
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: '#6B7280',
     textAlign: 'center',
+    marginBottom: 0,
   },
 });

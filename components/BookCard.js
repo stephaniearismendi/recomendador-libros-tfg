@@ -15,7 +15,11 @@ export default function BookCard({ title, author, rating, image, description }) 
         })
       }
     >
-      <Image source={image} style={styles.bookImage} />
+      <Image
+        source={{ uri: image }}
+        style={styles.bookImage}
+        resizeMode="cover"
+      />
       <Text style={styles.bookTitle}>{title}</Text>
       <Text style={styles.bookAuthor}>{author}</Text>
       <View style={styles.rating}>
@@ -28,35 +32,48 @@ export default function BookCard({ title, author, rating, image, description }) 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 12,
-    width: '48%',
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 12,
+    width: 124,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
   bookImage: {
-    width: '100%',
-    height: 160,
+    width: 100,
+    height: 145,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 12,
+    backgroundColor: '#e0e0e0',
+    alignSelf: 'center',
   },
   bookTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontFamily: 'Poppins-Bold',
+    color: '#222',
+    textAlign: 'center',
+    marginBottom: 4,
   },
   bookAuthor: {
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
     color: '#6B7280',
+    textAlign: 'center',
     marginTop: 2,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 6,
+    justifyContent: 'center',
   },
   star: {
     marginRight: 4,
