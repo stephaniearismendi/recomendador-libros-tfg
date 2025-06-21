@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, ActivityIndicator, FlatList } from 'react-native';
 import GenreFilter from '../components/GenreFilter';
 import Selector from '../components/Selector';
 import BookCard from '../components/BookCard';
@@ -39,18 +39,30 @@ export default function HomeScreen() {
           <Selector label="Estado de ánimo" />
           <Selector label="Ritmo de lectura" />
         </View>
+          <Text style={styles.sectionTitle}>Recomendaciones populares</Text>
 
-        <Text style={styles.sectionTitle}>Recomendaciones populares</Text>
-
-        {loading ? (
-          <ActivityIndicator size="large" color="#5A4FFF" style={{ marginTop: 24 }} />
-        ) : (
-          <View style={styles.cardContainer}>
-            {books.map((book) => (
-              <BookCard key={book.id} {...book} />
-            ))}
-          </View>
-        )}
+          {loading ? (
+            <ActivityIndicator size="large" color="#5A4FFF" style={{ marginTop: 24 }} />
+          ) : (
+            <FlatList
+              data={books}
+              keyExtractor={item => item.id?.toString() || item.title}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+              renderItem={({ item }) => (
+                <BookCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  author={item.author}
+                  rating={item.rating}
+                  image={item.image}
+                  description={item.description}
+                />
+              )}
+            />
+          )}
       </ScrollView>
     </SafeAreaView>
   );

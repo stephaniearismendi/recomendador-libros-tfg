@@ -25,6 +25,11 @@ export const getPopularBooks = () =>
 export const getBooksByGenre = (genre) =>
   axios.get(`${API_URL}/books/genre?g=${encodeURIComponent(genre)}`);
 
+export const getBookDetails = (key) => {
+  const cleanedKey = key.replace(/^\/?works\//, '');
+  return axios.get(`${API_URL}/books/${cleanedKey}/details`);
+};
+
 // Favoritos
 export const getFavorites = (userId, token) =>
   axios.get(`${API_URL}/books/favorites/${userId}`, authHeaders(token));

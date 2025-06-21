@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'react-native-expo-image-cache';
 
-export default function BookCard({ title, author, rating, image, description }) {
+export default function BookCard({ id, title, author, rating, image, description }) {
   const navigation = useNavigation();
 
   return (
@@ -11,14 +12,16 @@ export default function BookCard({ title, author, rating, image, description }) 
       style={styles.card}
       onPress={() =>
         navigation.navigate('BookDetail', {
-          book: { title, author, rating, image, description },
+          book: { id, title, author, rating, image, description },
         })
       }
     >
       <Image
-        source={{ uri: image }}
+        uri={image}
         style={styles.bookImage}
         resizeMode="cover"
+        preview={{ uri: image }}
+        tint="light"
       />
       <Text style={styles.bookTitle}>{title}</Text>
       <Text style={styles.bookAuthor}>{author}</Text>
@@ -29,6 +32,7 @@ export default function BookCard({ title, author, rating, image, description }) 
     </TouchableOpacity>
   );
 }
+
 
 const styles = StyleSheet.create({
   card: {

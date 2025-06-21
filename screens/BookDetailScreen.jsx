@@ -1,11 +1,30 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getBookDetails } from '../api/api';
+
 
 export default function BookDetailScreen({ route }) {
   const { book } = route.params;
   const navigation = useNavigation();
+  const [details, setDetails] = useState({ description: '', rating: null });
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  console.log('book:', book);
+  const fetchDetails = async () => {
+    try {
+      const response = await getBookDetails(book.id);
+      setDetails(response.data);
+    } catch (error) {
+      console.error('Error al obtener detalles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchDetails();
+}, [book.id]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -13,16 +32,25 @@ export default function BookDetailScreen({ route }) {
         <MaterialIcons name="arrow-back" size={28} color="#3b5998" />
       </TouchableOpacity>
 
-      <Image source={book.image} style={styles.cover} />
+      <Image source={{ uri: book.image }} style={styles.cover} />
       <Text style={styles.title}>{book.title}</Text>
       <Text style={styles.author}>por {book.author}</Text>
+
       <View style={styles.ratingRow}>
         <MaterialIcons name="star" size={20} color="#FFD700" />
-        <Text style={styles.ratingText}>{book.rating || '4.5'}</Text>
+        <Text style={styles.ratingText}>
+          {loading ? '...' : details.rating || '4.5'}
+        </Text>
       </View>
-      <Text style={styles.description}>
-        {book.description || 'No hay descripción disponible.'}
-      </Text>
+
+      {loading ? (
+        <ActivityIndicator size="small" color="#888" />
+      ) : (
+        <Text style={styles.description}>
+          {details.description || 'No hay descripción disponible.'}
+        </Text>
+      )}
+
       <TouchableOpacity style={styles.favButton}>
         <MaterialIcons name="favorite-border" size={22} color="#e63946" />
         <Text style={styles.favButtonText}>Agregar a Favoritos</Text>

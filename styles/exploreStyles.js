@@ -22,7 +22,10 @@ const exploreStyles = StyleSheet.create({
   },
   cardContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    gap: 12,
+    marginBottom: 0,
   },
 });
 
