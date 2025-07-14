@@ -7,25 +7,39 @@ const exploreStyles = StyleSheet.create({
   },
   scroll: {
     padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 16,
   },
   heading: {
-    fontSize: 26,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 4,
     fontFamily: 'serif',
   },
   subheading: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#6B7280',
-    marginBottom: 16,
+    marginTop: 4,
   },
-  cardContainer: {
+  filterSection: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  selectorRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
     gap: 12,
-    marginBottom: 0,
+    marginTop: 12,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1F2937',
   },
 });
 

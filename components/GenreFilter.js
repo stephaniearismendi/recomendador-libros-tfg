@@ -1,21 +1,25 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function GenreFilter() {
+const genres = ['Todos', 'Ficción', 'Misterio', 'Romántica'];
+
+export default function GenreFilter({ selected, onSelect }) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.primary}>
-        <Text style={styles.primaryText}>Todos</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.secondary}>
-        <Text style={styles.secondaryText}>Ficción</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.secondary}>
-        <Text style={styles.secondaryText}>Misterio</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.secondary}>
-        <Text style={styles.secondaryText}>Romántica</Text>
-      </TouchableOpacity>
+      {genres.map((genre) => {
+        const isSelected = selected === genre || (genre === 'Todos' && !selected);
+        return (
+          <TouchableOpacity
+            key={genre}
+            style={isSelected ? styles.primary : styles.secondary}
+            onPress={() => onSelect(genre === 'Todos' ? null : genre)}
+          >
+            <Text style={isSelected ? styles.primaryText : styles.secondaryText}>
+              {genre}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
