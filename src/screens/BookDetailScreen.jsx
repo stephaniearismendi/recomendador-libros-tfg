@@ -8,18 +8,45 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getBookDetails } from '../api/api';
+import {
+  getBookDetails,
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  getUserIdFromToken,
+} from '../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function BookDetailScreen({ route }) {
   const { book } = route.params;
   const navigation = useNavigation();
   const [details, setDetails] = useState({ description: '', rating: null });
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
   const finalRating = details.rating ?? book.rating;
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const t = await AsyncStorage.getItem('token');
+      if (t) {
+        setToken(t);
+        try {
+          const res = await getUserIdFromToken(t);
+          setUserId(res.data.userId);
+        } catch (err) {
+          console.error('Error al obtener userId desde el token:', err);
+        }
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -34,6 +61,36 @@ export default function BookDetailScreen({ route }) {
     };
     fetchDetails();
   }, [book.id]);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!userId || !token) return;
+      try {
+        const favRes = await getFavorites(userId, token);
+        setIsFavorite(favRes.data.some(fav => fav.id === book.id));
+      } catch (err) {
+        setIsFavorite(false);
+      }
+    };
+    checkFavorite();
+  }, [userId, token, book.id]);
+
+  const handleToggleFavorite = async () => {
+    if (!userId || !token) return;
+    try {
+      if (isFavorite) {
+        await removeFavorite(userId, book.id, token);
+        setIsFavorite(false);
+      } else {
+        await addFavorite(userId, book, token);
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      console.error('FAVORITE ERROR:', err?.response?.data || err.message || err);
+      Alert.alert('Error', 'No se pudo actualizar favoritos');
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -65,9 +122,15 @@ export default function BookDetailScreen({ route }) {
           </Text>
         )}
 
-        <TouchableOpacity style={styles.favButton}>
-          <MaterialIcons name="favorite-border" size={22} color="#e63946" />
-          <Text style={styles.favButtonText}>Agregar a Favoritos</Text>
+        <TouchableOpacity style={styles.favButton} onPress={handleToggleFavorite}>
+          <MaterialIcons
+            name={isFavorite ? 'favorite' : 'favorite-border'}
+            size={22}
+            color="#e63946"
+          />
+          <Text style={styles.favButtonText}>
+            {isFavorite ? 'Quitar de Favoritos' : 'Agregar a Favoritos'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

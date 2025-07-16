@@ -10,6 +10,9 @@ export const register = (userData) => axios.post(`${API_URL}/users/register`, us
 
 export const login = (credentials) => axios.post(`${API_URL}/users/login`, credentials);
 
+export const getUserIdFromToken = (token) =>
+  axios.get(`${API_URL}/users/me`, authHeaders(token));
+
 // Books
 export const getBooks = (token) => axios.get(`${API_URL}/books`, authHeaders(token));
 
@@ -34,8 +37,15 @@ export const getNewYorkTimesBooks = () => axios.get(`${API_URL}/books/nytBooks`)
 export const getFavorites = (userId, token) =>
   axios.get(`${API_URL}/books/favorites/${userId}`, authHeaders(token));
 
-export const addFavorite = (userId, bookId, token) =>
-  axios.post(`${API_URL}/books/favorites`, { userId, bookId }, authHeaders(token));
+export const addFavorite = (userId, book, token) =>
+  axios.post(`${API_URL}/favorites/${userId}/${book.id}`, {
+    title: book.title,
+    author: book.author,
+    imageUrl: book.image,
+    description: book.description ?? '',
+    rating: book.rating ?? null,
+    category: book.genre ?? '',
+  }, authHeaders(token));
 
 export const removeFavorite = (userId, bookId, token) =>
-  axios.delete(`${API_URL}/books/favorites/${userId}/${bookId}`, authHeaders(token));
+  axios.delete(`${API_URL}/favorites/${userId}/${bookId}`, authHeaders(token));

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const AuthContext = createContext();
 
@@ -9,21 +9,34 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const loadToken = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
-      setToken(storedToken);
-      setLoading(false);
+      try {
+        const storedToken = await SecureStore.getItemAsync('token');
+        setToken(storedToken);
+      } catch (err) {
+        console.error('Error cargando token', err);
+      } finally {
+        setLoading(false);
+      }
     };
     loadToken();
   }, []);
 
   const login = async (token) => {
-    await AsyncStorage.setItem('token', token);
-    setToken(token);
+    try {
+      await SecureStore.setItemAsync('token', token);
+      setToken(token);
+    } catch (err) {
+      console.error('Error guardando token', err);
+    }
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    setToken(null);
+    try {
+      await SecureStore.deleteItemAsync('token');
+      setToken(null);
+    } catch (err) {
+      console.error('Error eliminando token', err);
+    }
   };
 
   return (

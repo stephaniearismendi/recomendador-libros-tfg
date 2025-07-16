@@ -14,20 +14,20 @@ export default function MainNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#5A4FFF" />
       </View>
     );
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!token ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
-      ) : (
+      {token ? (
         <>
           <Stack.Screen name="Tabs" component={TabNavigator} />
           <Stack.Screen name="BookDetail" component={BookDetailScreen} />
         </>
+      ) : (
+        <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>
   );
