@@ -25,14 +25,21 @@ export default function BookCard({ id, title, author, rating, image, description
       />
       <Text style={styles.bookTitle}>{title}</Text>
       <Text style={styles.bookAuthor}>{author}</Text>
-      <View style={styles.rating}>
-        <MaterialIcons name="star" size={14} color="#FFD700" style={styles.star} />
-        <Text style={styles.ratingText}>{rating}</Text>
-      </View>
+      {rating && (
+        <View style={styles.rating}>
+          {Number(rating) ? (
+            <>
+              <MaterialIcons name="star" size={14} color="#FFD700" style={styles.star} />
+              <Text style={styles.ratingText}>{rating}</Text>
+            </>
+          ) : (
+            <Text style={[styles.ratingText, { color: '#E63946' }]}>{rating}</Text>
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
-
 
 const styles = StyleSheet.create({
   card: {

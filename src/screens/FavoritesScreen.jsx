@@ -2,9 +2,17 @@ import React from 'react';
 import { SafeAreaView, View, Text, FlatList, Image, StyleSheet } from 'react-native';
 
 const favoriteBooks = [
-  { title: 'Dune', author: 'Frank Herbert', image: require('../assets/books/dune.jpg') },
-  { title: 'Foundation', author: 'Isaac Asimov', image: require('../assets/books/foundation.jpg') },
-  { title: 'Neuromancer', author: 'William Gibson', image: require('../assets/books/neuromancer.jpg') },
+  { title: 'Dune', author: 'Frank Herbert', image: require('../../assets/books/dune.jpg') },
+  {
+    title: 'Foundation',
+    author: 'Isaac Asimov',
+    image: require('../../assets/books/foundation.jpg'),
+  },
+  {
+    title: 'Neuromancer',
+    author: 'William Gibson',
+    image: require('../../assets/books/neuromancer.jpg'),
+  },
 ];
 
 export default function FavoritesScreen() {
@@ -13,7 +21,7 @@ export default function FavoritesScreen() {
       <Text style={styles.title}>Mis Favoritos</Text>
       <FlatList
         data={favoriteBooks}
-        keyExtractor={item => item.title}
+        keyExtractor={(item) => item.title}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Image source={item.image} style={styles.cover} />

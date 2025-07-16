@@ -14,9 +14,7 @@ export default function GenreFilter({ selected, onSelect }) {
             style={isSelected ? styles.primary : styles.secondary}
             onPress={() => onSelect(genre === 'Todos' ? null : genre)}
           >
-            <Text style={isSelected ? styles.primaryText : styles.secondaryText}>
-              {genre}
-            </Text>
+            <Text style={isSelected ? styles.primaryText : styles.secondaryText}>{genre}</Text>
           </TouchableOpacity>
         );
       })}

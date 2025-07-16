@@ -20,7 +20,7 @@ export default function LibraryScreen() {
               chapter: 'Capítulo 7 de 24',
               progress: 29,
               timeLeft: '12min restantes',
-              image: require('../assets/books/project-hail-mary.jpg'),
+              image: require('../../assets/books/project-hail-mary.jpg'),
             }}
             titleStyle={styles.title}
             authorStyle={styles.subtitle}
@@ -36,9 +36,21 @@ export default function LibraryScreen() {
             bookTitleStyle={styles.subtitle}
             authorStyle={styles.subtitle}
             books={[
-              { title: 'Dune', author: 'Frank Herbert', image: require('../assets/books/dune.jpg') },
-              { title: 'Foundation', author: 'Isaac Asimov', image: require('../assets/books/foundation.jpg') },
-              { title: 'Neuromancer', author: 'William Gibson', image: require('../assets/books/neuromancer.jpg') },
+              {
+                title: 'Dune',
+                author: 'Frank Herbert',
+                image: require('../../assets/books/dune.jpg'),
+              },
+              {
+                title: 'Foundation',
+                author: 'Isaac Asimov',
+                image: require('../../assets/books/foundation.jpg'),
+              },
+              {
+                title: 'Neuromancer',
+                author: 'William Gibson',
+                image: require('../../assets/books/neuromancer.jpg'),
+              },
             ]}
           />
         </View>

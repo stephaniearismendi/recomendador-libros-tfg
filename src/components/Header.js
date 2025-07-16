@@ -6,7 +6,7 @@ export default function Header({ greeting }) {
   return (
     <View style={styles.header}>
       <Text style={styles.greeting}>{greeting}</Text>
-      <Image source={require('../assets/icon.png')} style={styles.avatar} />
+      <Image source={require('../../assets/icon.png')} style={styles.avatar} />
     </View>
   );
 }

@@ -10,18 +10,10 @@ export default function Selector({ label, options = [], selected, onSelect }) {
         {options.map((option) => (
           <TouchableOpacity
             key={option}
-            style={[
-              styles.option,
-              selected === option && styles.optionSelected,
-            ]}
+            style={[styles.option, selected === option && styles.optionSelected]}
             onPress={() => onSelect(option === selected ? null : option)}
           >
-            <Text
-              style={[
-                styles.optionText,
-                selected === option && styles.optionTextSelected,
-              ]}
-            >
+            <Text style={[styles.optionText, selected === option && styles.optionTextSelected]}>
               {option}
             </Text>
           </TouchableOpacity>

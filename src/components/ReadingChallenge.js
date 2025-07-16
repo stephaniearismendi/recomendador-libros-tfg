@@ -17,9 +17,9 @@ export default function ReadingChallenge({ title, current, total }) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 0,           
-    padding: 0,                
-    marginBottom: 0,           
+    borderRadius: 0,
+    padding: 0,
+    marginBottom: 0,
     shadowColor: 'transparent',
     elevation: 0,
   },

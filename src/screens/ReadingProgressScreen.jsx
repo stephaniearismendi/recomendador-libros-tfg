@@ -6,7 +6,11 @@ export default function ReadingProgressScreen({ route }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Progreso de lectura</Text>
-      <ProgressBarAndroid styleAttr="Horizontal" progress={progress / total} indeterminate={false} />
+      <ProgressBarAndroid
+        styleAttr="Horizontal"
+        progress={progress / total}
+        indeterminate={false}
+      />
       <Text style={styles.percent}>{((progress / total) * 100).toFixed(0)}%</Text>
     </View>
   );
@@ -15,5 +19,5 @@ export default function ReadingProgressScreen({ route }) {
 const styles = StyleSheet.create({
   container: { padding: 24 },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  percent: { marginTop: 10, fontSize: 16 }
+  percent: { marginTop: 10, fontSize: 16 },
 });

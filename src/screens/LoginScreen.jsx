@@ -22,11 +22,10 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
-        <MaterialCommunityIcons name="book-open-page-variant" size={48} color="#5A4FFF" />
-      </View>
-      <Text style={styles.title}>Bienvenido de nuevo</Text>
-
+        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          <MaterialCommunityIcons name="book-open-page-variant" size={48} color="#5A4FFF" />
+        </View>
+        <Text style={styles.title}>Bienvenido de nuevo</Text>
 
         <TextInput
           style={styles.input}
@@ -46,9 +45,7 @@ export default function LoginScreen() {
           onChangeText={setPassword}
         />
 
-        {errorMessage !== '' && (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        )}
+        {errorMessage !== '' && <Text style={styles.errorText}>{errorMessage}</Text>}
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Iniciar sesión</Text>

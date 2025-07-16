@@ -19,11 +19,15 @@ export default function BookCarousel({ title, books, titleStyle, bookTitleStyle,
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: 4 }}
         renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Image source={item.image} style={styles.bookImage} />
-          <Text style={styles.bookTitle} numberOfLines={2}>{item.title}</Text>
-          <Text style={styles.bookAuthor} numberOfLines={1}>{item.author}</Text>
-        </View>
+          <View style={styles.card}>
+            <Image source={item.image} style={styles.bookImage} />
+            <Text style={styles.bookTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <Text style={styles.bookAuthor} numberOfLines={1}>
+              {item.author}
+            </Text>
+          </View>
         )}
       />
     </View>
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     marginRight: 2,
   },
-card: {
+  card: {
     backgroundColor: '#fff',
     borderRadius: 16,
     paddingTop: 10,

@@ -2,7 +2,7 @@
   "name": "biblioteca-lectura",
   "license": "0BSD",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "build": "npm run format && expo build"
+    "build": "npm run format && eas build"
   },
   "lint-staged": {
     "**/*.{js,jsx}": [
@@ -42,9 +42,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "eslint": "^9.29.0",
+    "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "prettier": "^3.5.3"

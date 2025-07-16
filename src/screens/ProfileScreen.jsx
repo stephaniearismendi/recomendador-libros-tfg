@@ -8,7 +8,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.background}>
       <View style={styles.card}>
-        <Image source={require('../assets/icon.png')} style={styles.avatar} />
+        <Image source={require('../../assets/icon.png')} style={styles.avatar} />
         <Text style={styles.name}>Alex García</Text>
         <Text style={styles.username}>@alexreader</Text>
         <View style={styles.statsRow}>
