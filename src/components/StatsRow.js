@@ -1,12 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function StatsRow({ stats }) {
+export default function StatsRow({ stats = {} }) {
+  const read = stats.read ?? 0;
+  const inProgress = stats.inProgress ?? stats.reading ?? 0;
+  const toRead = stats.toRead ?? 0;
+
   return (
     <View style={styles.card}>
-      <Stat label="Leídos" value={stats.read} />
-      <Stat label="Tiempo" value={stats.time} />
-      <Stat label="Por leer" value={stats.toRead} />
+      <Stat label="Leídos" value={read} />
+      <Divider />
+      <Stat label="En curso" value={inProgress} />
+      <Divider />
+      <Stat label="Por leer" value={toRead} />
     </View>
   );
 }
@@ -20,23 +26,27 @@ function Stat({ label, value }) {
   );
 }
 
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 16,
     paddingVertical: 18,
-    paddingHorizontal: 24,
-    marginBottom: 0,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
   },
   stat: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 6,
   },
   value: {
     fontFamily: 'Poppins-Bold',
@@ -48,5 +58,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 13,
     color: '#6B7280',
+  },
+  divider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#E5E7EB',
+    opacity: 0.8,
+    marginHorizontal: 6,
+    borderRadius: 1,
   },
 });

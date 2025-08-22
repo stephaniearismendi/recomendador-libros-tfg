@@ -1,112 +1,100 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 
-export default function CurrentlyReadingCard({ book }) {
+const FALLBACK_IMG = 'https://covers.openlibrary.org/b/id/240727-S.jpg';
+
+export default function CurrentlyReadingCard({ title, author, coverUri, progress = 0 }) {
+  if (!title) {
+    return (
+      <View style={styles.cardEmpty}>
+        <Text style={styles.emptyTitle}>No hay ningún libro en lectura</Text>
+        <Text style={styles.emptySubtitle}>Elige uno de tus favoritos para empezar.</Text>
+      </View>
+    );
+  }
+
+  const pct = Math.max(0, Math.min(100, progress || 0));
+
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Currently Reading</Text>
-      <Text style={styles.chapter}>{book.chapter}</Text>
+      <Image source={{ uri: coverUri || FALLBACK_IMG }} style={styles.cover} resizeMode="cover" />
+      <View style={styles.meta}>
+        <Text style={styles.title} numberOfLines={2}>{title}</Text>
+        {!!author && <Text style={styles.author} numberOfLines={1}>{author}</Text>}
 
-      <View style={styles.bookContainer}>
-        <Image source={book.image} style={styles.cover} />
-        <View style={styles.info}>
-          <Text style={styles.title}>{book.title}</Text>
-          <Text style={styles.author}>{book.author}</Text>
-          <TouchableOpacity style={styles.continueButton}>
-            <Text style={styles.continueText}>Continue</Text>
-          </TouchableOpacity>
-          <Text style={styles.timeLeft}>{book.timeLeft}</Text>
+        <View style={styles.progressWrap}>
+          <View style={styles.progressBg}>
+            <View style={[styles.progressFill, { width: `${pct}%` }]} />
+          </View>
+          <Text style={styles.progressText}>{pct}%</Text>
         </View>
-      </View>
-
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progress, { width: `${book.progress}%` }]} />
-        <Text style={styles.progressLabel}>{book.progress}% Complete</Text>
       </View>
     </View>
   );
 }
 
+const RADIUS = 16;
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#E7ECFD',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 0,
-    width: '100%',
-    alignSelf: 'center',
-    elevation: 0,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  chapter: {
-    fontSize: 12,
-    color: '#4B5563',
-    marginBottom: 8,
-  },
-  bookContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS,
     padding: 12,
-    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  cardEmpty: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   cover: {
-    width: 70,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 16,
+    width: 72,
+    height: 108,
+    borderRadius: 10,
+    backgroundColor: '#EEE',
   },
-  info: {
+  meta: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   title: {
-    fontWeight: '600',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
   },
   author: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6B7280',
-    marginBottom: 8,
+    marginTop: 6,
   },
-  continueButton: {
-    backgroundColor: '#6366F1',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
+  progressWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
   },
-  continueText: {
-    color: '#FFF',
+  progressBg: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 8,
+    backgroundColor: '#5A4FFF',
+    borderRadius: 24,
+  },
+  progressText: {
     fontSize: 12,
-  },
-  timeLeft: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  progressBarContainer: {
-    marginTop: 8,
-    backgroundColor: '#CBD5E1',
-    borderRadius: 20,
-    height: 6,
-    position: 'relative',
-  },
-  progress: {
-    backgroundColor: '#6366F1',
-    height: 6,
-    borderRadius: 20,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  progressLabel: {
-    fontSize: 10,
     color: '#4F46E5',
-    alignSelf: 'flex-end',
-    marginTop: 4,
+    width: 38,
+    textAlign: 'right',
   },
 });
