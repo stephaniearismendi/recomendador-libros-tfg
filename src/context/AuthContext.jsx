@@ -1,41 +1,57 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AuthContext = createContext();
+
+async function setItem(key, value) {
+  if (Platform.OS === 'web') return AsyncStorage.setItem(key, value);
+  return SecureStore.setItemAsync(key, value);
+}
+
+async function getItem(key) {
+  if (Platform.OS === 'web') return AsyncStorage.getItem(key);
+  return SecureStore.getItemAsync(key);
+}
+
+async function deleteItem(key) {
+  if (Platform.OS === 'web') return AsyncStorage.removeItem(key);
+  return SecureStore.deleteItemAsync(key);
+}
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadToken = async () => {
+    (async () => {
       try {
-        const storedToken = await SecureStore.getItemAsync('token');
-        setToken(storedToken);
-      } catch (err) {
-        console.error('Error cargando token', err);
+        const stored = await getItem('token');
+        setToken(stored);
+      } catch (e) {
+        console.error('Error cargando token', e);
       } finally {
         setLoading(false);
       }
-    };
-    loadToken();
+    })();
   }, []);
 
-  const login = async (token) => {
+  const login = async (newToken) => {
     try {
-      await SecureStore.setItemAsync('token', token);
-      setToken(token);
-    } catch (err) {
-      console.error('Error guardando token', err);
+      await setItem('token', newToken);
+      setToken(newToken);
+    } catch (e) {
+      console.error('Error guardando token', e);
     }
   };
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync('token');
+      await deleteItem('token');
       setToken(null);
-    } catch (err) {
-      console.error('Error eliminando token', err);
+    } catch (e) {
+      console.error('Error eliminando token', e);
     }
   };
 

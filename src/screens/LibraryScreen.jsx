@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -12,6 +12,9 @@ import {
   Image,
   TextInput,
 } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 import Header from '../components/Header';
 import CurrentlyReadingCard from '../components/CurrentlyReadingCard';
 import StatsRow from '../components/StatsRow';
@@ -24,10 +27,8 @@ import {
   getPopularBooks,
   addFavorite,
   removeFavorite,
+  getPersonalRecommendations,
 } from '../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
-import { useFocusEffect } from '@react-navigation/native';
 
 const READING_KEY = 'current_reading';
 const PROGRESS_KEY = 'progress_map';
@@ -37,7 +38,7 @@ const FALLBACK_IMG = 'https://covers.openlibrary.org/b/id/240727-S.jpg';
 function coverUriFromBook(book) {
   const str = typeof book?.image === 'string' ? book.image : null;
   const obj = typeof book?.image === 'object' && book?.image?.uri ? book.image.uri : null;
-  const direct = str || obj || book?.cover || book?.coverUrl;
+  const direct = str || obj || book?.cover || book?.coverUrl || book?.imageUrl;
   if (direct) return direct;
   if (book?.cover_i) return `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`;
   if (Array.isArray(book?.isbn) && book.isbn.length > 0) return `https://covers.openlibrary.org/b/isbn/${book.isbn[0]}-M.jpg`;
@@ -46,8 +47,10 @@ function coverUriFromBook(book) {
 }
 
 export default function LibraryScreen() {
+  const navigation = useNavigation();
   const year = new Date().getFullYear();
 
+  const [token, setToken] = useState(null);
   const [userId, setUserId] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
@@ -67,20 +70,19 @@ export default function LibraryScreen() {
   const [tempGoal, setTempGoal] = useState('');
 
   useEffect(() => {
-    const loadUser = async () => {
+    (async () => {
+      const t = await AsyncStorage.getItem('token');
+      if (!t) return;
+      setToken(t);
       try {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          const decoded = jwtDecode(token);
-          setUserId(decoded?.userId || null);
-        }
+        const decoded = jwtDecode(t);
+        setUserId(decoded?.userId || null);
       } catch {}
-    };
-    loadUser();
+    })();
   }, []);
 
   useEffect(() => {
-    const loadLocal = async () => {
+    (async () => {
       if (!userId) return;
       const r = await AsyncStorage.getItem(`${READING_KEY}:${userId}`);
       setReading(r ? JSON.parse(r) : null);
@@ -88,59 +90,85 @@ export default function LibraryScreen() {
       setProgressMap(p ? JSON.parse(p) : {});
       const g = await AsyncStorage.getItem(`${CHALLENGE_KEY}:${userId}:${year}`);
       setChallengeGoal(g ? parseInt(g, 10) : null);
-    };
-    loadLocal();
+    })();
   }, [userId, year]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) return;
-      const loadData = async () => {
+      let isActive = true;
+      (async () => {
         setLoading(true);
         try {
-          const [favRes, recRes] = await Promise.all([
-            getFavorites(userId),
-            getPopularBooks(),
-          ]);
-          const favs = favRes?.data || [];
+          let favs = [];
+          if (userId && token) {
+            const favRes = await getFavorites(userId, token);
+            favs = favRes?.data || [];
+          }
+          if (!isActive) return;
           setFavorites(favs);
-          setRecommendations((recRes?.data || []).slice(0, 6));
+
+          let recs = [];
+          try {
+            if (userId && token) {
+              const recRes = await getPersonalRecommendations({ userId }, token);
+              recs = recRes?.data || [];
+            } else {
+              const popRes = await getPopularBooks();
+              recs = popRes?.data || [];
+            }
+          } catch {
+            const popRes = await getPopularBooks();
+            recs = popRes?.data || [];
+          }
+          if (!isActive) return;
+          setRecommendations(recs.slice(0, 6));
+
           if (reading && favs.every(f => f.id !== reading.id)) {
             setReading(null);
             await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
           }
-        } catch {} finally {
-          setLoading(false);
+        } finally {
+          if (isActive) setLoading(false);
         }
+      })();
+      return () => {
+        isActive = false;
       };
-      loadData();
-    }, [userId, reading])
+    }, [userId, token, reading])
   );
 
-  const persistProgress = async (next) => {
+  const persistProgress = useCallback(async (next) => {
     setProgressMap(next);
     await AsyncStorage.setItem(`${PROGRESS_KEY}:${userId}`, JSON.stringify(next));
-  };
+  }, [userId]);
 
-  const toggleFavorite = async (book) => {
+  const toggleFavorite = useCallback(async (book) => {
     try {
+      if (!userId || !token) {
+        Alert.alert('Sesión requerida', 'Inicia sesión para gestionar favoritos.');
+        return;
+      }
       if (favorites.some(fav => fav.id === book.id)) {
-        await removeFavorite(userId, book.id);
+        await removeFavorite(userId, book.id, token);
         if (reading && reading.id === book.id) {
           setReading(null);
           await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
         }
       } else {
-        await addFavorite(userId, book);
+        await addFavorite(userId, book, token);
       }
-      const favRes = await getFavorites(userId);
+      const favRes = await getFavorites(userId, token);
       setFavorites(favRes.data || []);
+      try {
+        const recRes = await getPersonalRecommendations({ userId }, token);
+        setRecommendations((recRes?.data || []).slice(0, 6));
+      } catch {}
     } catch {
       Alert.alert('Error', 'No se pudo actualizar favoritos');
     }
-  };
+  }, [favorites, reading, token, userId]);
 
-  const chooseReading = async (book) => {
+  const chooseReading = useCallback(async (book) => {
     setReading(book);
     await AsyncStorage.setItem(`${READING_KEY}:${userId}`, JSON.stringify(book));
     const p = progressMap[book.id];
@@ -149,14 +177,14 @@ export default function LibraryScreen() {
       setPagesModalVisible(true);
     }
     setPickerVisible(false);
-  };
+  }, [progressMap, userId]);
 
-  const clearReading = async () => {
+  const clearReading = useCallback(async () => {
     setReading(null);
     await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
-  };
+  }, [userId]);
 
-  const saveTotalPages = async () => {
+  const saveTotalPages = useCallback(async () => {
     const total = parseInt(tempPages, 10);
     if (!reading || isNaN(total) || total <= 0) return;
     const prev = progressMap[reading.id] || { totalPages: 0, pagesRead: 0 };
@@ -164,9 +192,9 @@ export default function LibraryScreen() {
     await persistProgress(next);
     setPagesModalVisible(false);
     setTempPages('');
-  };
+  }, [reading, tempPages, progressMap, persistProgress]);
 
-  const openProgressModal = () => {
+  const openProgressModal = useCallback(() => {
     if (!reading) return;
     const p = progressMap[reading.id];
     const total = p?.totalPages || 0;
@@ -175,19 +203,16 @@ export default function LibraryScreen() {
     setTempPercent(percent ? String(percent) : '');
     setTempPage(pagesRead ? String(pagesRead) : '');
     setProgressModalVisible(true);
-  };
+  }, [reading, progressMap]);
 
-  const saveProgress = async () => {
+  const saveProgress = useCallback(async () => {
     if (!reading) return;
     const current = progressMap[reading.id] || { totalPages: 0, pagesRead: 0 };
     const total = current.totalPages || 0;
-
     const hasPercent = tempPercent.trim() !== '' && !isNaN(parseInt(tempPercent, 10));
     const hasPage = tempPage.trim() !== '' && !isNaN(parseInt(tempPage, 10));
     if (!hasPercent && !hasPage) return;
-
     let pagesRead = current.pagesRead || 0;
-
     if (hasPercent) {
       const pct = Math.max(0, Math.min(100, parseInt(tempPercent, 10)));
       pagesRead = total > 0 ? Math.round((pct / 100) * total) : 0;
@@ -195,54 +220,48 @@ export default function LibraryScreen() {
       const val = Math.max(0, parseInt(tempPage, 10));
       pagesRead = total > 0 ? Math.min(val, total) : val;
     }
-
     const next = { ...progressMap, [reading.id]: { totalPages: total, pagesRead } };
     await persistProgress(next);
-
     setProgressModalVisible(false);
     setTempPercent('');
     setTempPage('');
-
     if (total > 0 && pagesRead >= total) {
       setReading(null);
       await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
     }
-  };
+  }, [reading, tempPercent, tempPage, progressMap, persistProgress, userId]);
 
-  const readingProgressPercent = (() => {
+  const readingProgressPercent = useMemo(() => {
     if (!reading) return 0;
     const p = progressMap[reading.id];
     if (!p || !p.totalPages) return 0;
     return Math.max(0, Math.min(100, Math.round((p.pagesRead / p.totalPages) * 100)));
-  })();
+  }, [reading, progressMap]);
 
-  const stats = (() => {
+  const stats = useMemo(() => {
     const read = favorites.filter(b => {
       const p = progressMap[b.id];
       return p && p.totalPages && p.pagesRead >= p.totalPages;
     }).length;
-
     const inProgress = favorites.filter(b => {
       const p = progressMap[b.id];
       return p && p.totalPages && p.pagesRead > 0 && p.pagesRead < p.totalPages;
     }).length;
-
     const toRead = favorites.filter(b => {
       const p = progressMap[b.id];
       return !p || !p.pagesRead || p.pagesRead === 0;
     }).length;
-
     return { read, inProgress, toRead };
-  })();
+  }, [favorites, progressMap]);
 
   const currentCover = reading ? coverUriFromBook(reading) : null;
 
-  const openChallengeModal = () => {
+  const openChallengeModal = useCallback(() => {
     setTempGoal(challengeGoal ? String(challengeGoal) : '');
     setChallengeModalVisible(true);
-  };
+  }, [challengeGoal]);
 
-  const saveChallengeGoal = async () => {
+  const saveChallengeGoal = useCallback(async () => {
     const g = parseInt(tempGoal, 10);
     if (isNaN(g) || g <= 0) {
       Alert.alert('Objetivo no válido', 'Introduce un número de libros mayor que 0.');
@@ -252,7 +271,12 @@ export default function LibraryScreen() {
     await AsyncStorage.setItem(`${CHALLENGE_KEY}:${userId}:${year}`, String(g));
     setChallengeModalVisible(false);
     setTempGoal('');
-  };
+  }, [tempGoal, userId, year]);
+
+  const openBookDetails = useCallback((book) => {
+    const key = book?.key || book?.id || book?.olid || book?.workId;
+    navigation?.navigate?.('BookDetail', { bookKey: key, book });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -330,6 +354,8 @@ export default function LibraryScreen() {
                 ...book,
                 image: { uri: coverUriFromBook(book) },
               }))}
+              onSeeAll={() => navigation?.navigate?.('Explore')}
+              onPressBook={openBookDetails}
             />
           )}
         </View>
@@ -344,12 +370,17 @@ export default function LibraryScreen() {
             <FlatList
               data={favorites}
               horizontal
-              keyExtractor={item => item.id?.toString() || item.title}
+              keyExtractor={(item) => item.id?.toString() || item.key || item.title}
               renderItem={({ item }) => (
-                <TouchableOpacity activeOpacity={0.9} onLongPress={() => chooseReading(item)}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onLongPress={() => chooseReading(item)}
+                  onPress={() => openBookDetails(item)}
+                >
                   <BookCard
                     {...item}
-                    isFavorite={true}
+                    image={{ uri: coverUriFromBook(item) }}
+                    isFavorite
                     onToggleFavorite={() => toggleFavorite(item)}
                   />
                 </TouchableOpacity>
@@ -390,7 +421,7 @@ export default function LibraryScreen() {
             ) : (
               <FlatList
                 data={favorites}
-                keyExtractor={(item) => item.id?.toString() || item.title}
+                keyExtractor={(item) => item.id?.toString() || item.key || item.title}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
                 renderItem={({ item }) => (
                   <TouchableOpacity

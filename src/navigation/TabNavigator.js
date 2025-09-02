@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import FavoritesScreen from '../screens/FavoritesScreen';
 import { Ionicons } from '@expo/vector-icons';
+import SocialScreen from '../screens/SocialScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,11 +16,10 @@ const TabNavigator = () => {
         tabBarIcon: ({ color, size }) => {
           const icons = {
             Home: 'home',
-            Explore: 'search',
             Library: 'book',
             Achievements: 'trophy',
+            Social: 'people',
             Profile: 'person',
-            Favorites: 'heart',
           };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
@@ -28,8 +27,8 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Library" component={LibraryScreen} />
+      <Tab.Screen name="Social" component={SocialScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
     </Tab.Navigator>
   );
 };
