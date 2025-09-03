@@ -15,9 +15,20 @@ const coverFrom = (b) => {
     b?.coverUrl ||
     b?.cover ||
     (b?.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg` : null) ||
-    (Array.isArray(b?.isbn) && b.isbn[0] ? `https://covers.openlibrary.org/b/isbn/${b.isbn[0]}-M.jpg` : null) ||
-    (b?.title ? `https://covers.openlibrary.org/b/title/${encodeURIComponent(b.title)}-M.jpg` : null)
+    (Array.isArray(b?.isbn) && b.isbn[0]
+      ? `https://covers.openlibrary.org/b/isbn/${b.isbn[0]}-M.jpg`
+      : null) ||
+    (b?.title
+      ? `https://covers.openlibrary.org/b/title/${encodeURIComponent(b.title)}-M.jpg`
+      : null)
   );
+};
+
+const asPathBookId = (raw) => {
+  const s = String(raw ?? '')
+    .trim()
+    .replace(/^\/+/, '/');
+  return encodeURIComponent(s);
 };
 
 // Auth
@@ -41,7 +52,7 @@ export const getNewYorkTimesBooks = () => axios.get(`${API_URL}/books/nytBooks`)
 export const getPersonalRecommendations = (payload, token) =>
   axios.post(`${API_URL}/recommendations/personal`, payload, authHeaders(token));
 
-// Favorites (acepta id o objeto)
+// Favorites
 export const getFavorites = (userId, token) =>
   axios.get(`${API_URL}/books/favorites/${userId}`, authHeaders(token));
 
@@ -63,11 +74,14 @@ export const addFavorite = (userId, bookOrId, token) => {
         }
       : {};
 
-  return axios.post(`${API_URL}/favorites/${userId}/${id}`, body, authHeaders(token));
+  const pathId = asPathBookId(id);
+  return axios.post(`${API_URL}/favorites/${userId}/${pathId}`, body, authHeaders(token));
 };
 
-export const removeFavorite = (userId, bookId, token) =>
-  axios.delete(`${API_URL}/favorites/${userId}/${bookId}`, authHeaders(token));
+export const removeFavorite = (userId, bookId, token) => {
+  const pathId = asPathBookId(bookId);
+  return axios.delete(`${API_URL}/favorites/${userId}/${pathId}`, authHeaders(token));
+};
 
 // Social
 export const getFeed = (token) => axios.get(`${API_URL}/social/feed`, authHeaders(token));
