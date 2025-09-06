@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,18 +34,9 @@ import {
 const READING_KEY = 'current_reading';
 const PROGRESS_KEY = 'progress_map';
 const CHALLENGE_KEY = 'reading_challenge_goal';
-const FALLBACK_IMG = 'https://covers.openlibrary.org/b/id/240727-S.jpg';
 
-function coverUriFromBook(book) {
-  const str = typeof book?.image === 'string' ? book.image : null;
-  const obj = typeof book?.image === 'object' && book?.image?.uri ? book.image.uri : null;
-  const direct = str || obj || book?.cover || book?.coverUrl || book?.imageUrl;
-  if (direct) return direct;
-  if (book?.cover_i) return `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`;
-  if (Array.isArray(book?.isbn) && book.isbn.length > 0) return `https://covers.openlibrary.org/b/isbn/${book.isbn[0]}-M.jpg`;
-  if (book?.title) return `https://covers.openlibrary.org/b/title/${encodeURIComponent(book.title)}-M.jpg`;
-  return FALLBACK_IMG;
-}
+// Las funciones coverUriFromBook y withResolvedCover se removieron
+// porque los libros ya vienen con imagen de la base de datos
 
 export default function LibraryScreen() {
   const navigation = useNavigation();
@@ -57,6 +49,7 @@ export default function LibraryScreen() {
   const [reading, setReading] = useState(null);
   const [progressMap, setProgressMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pagesModalVisible, setPagesModalVisible] = useState(false);
@@ -99,14 +92,15 @@ export default function LibraryScreen() {
       (async () => {
         setLoading(true);
         try {
+          // --- favoritos
           let favs = [];
           if (userId && token) {
             const favRes = await getFavorites(userId, token);
             favs = favRes?.data || [];
           }
-          if (!isActive) return;
-          setFavorites(favs);
+          if (isActive) setFavorites(favs);
 
+          // --- recomendaciones
           let recs = [];
           try {
             if (userId && token) {
@@ -120,13 +114,16 @@ export default function LibraryScreen() {
             const popRes = await getPopularBooks();
             recs = popRes?.data || [];
           }
-          if (!isActive) return;
-          setRecommendations(recs.slice(0, 6));
+          
+          if (isActive) setRecommendations(recs.slice(0, 6));
 
+          // si el "reading" ya no está en favoritos, límpialo
           if (reading && favs.every(f => f.id !== reading.id)) {
-            setReading(null);
+            if (isActive) setReading(null);
             await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
           }
+        } catch (error) {
+          console.error('Error al cargar datos:', error);
         } finally {
           if (isActive) setLoading(false);
         }
@@ -157,14 +154,25 @@ export default function LibraryScreen() {
       } else {
         await addFavorite(userId, book, token);
       }
+      // refresca favoritos
       const favRes = await getFavorites(userId, token);
-      setFavorites(favRes.data || []);
+      setFavorites(favRes.data || []);  // Los libros ya vienen con imagen de la BD
       try {
         const recRes = await getPersonalRecommendations({ userId }, token);
         setRecommendations((recRes?.data || []).slice(0, 6));
       } catch {}
-    } catch {
-      Alert.alert('Error', 'No se pudo actualizar favoritos');
+    } catch (err) {
+      console.error('FAVORITE ERROR (LibraryScreen):', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        config: {
+          url: err.config?.url,
+          method: err.config?.method
+        }
+      });
+      Alert.alert('Error', `No se pudo actualizar favoritos: ${err.response?.data?.error || err.message}`);
     }
   }, [favorites, reading, token, userId]);
 
@@ -254,7 +262,7 @@ export default function LibraryScreen() {
     return { read, inProgress, toRead };
   }, [favorites, progressMap]);
 
-  const currentCover = reading ? coverUriFromBook(reading) : null;
+  const currentCover = reading?.image || null;
 
   const openChallengeModal = useCallback(() => {
     setTempGoal(challengeGoal ? String(challengeGoal) : '');
@@ -278,10 +286,67 @@ export default function LibraryScreen() {
     navigation?.navigate?.('BookDetail', { bookKey: key, book });
   }, [navigation]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // --- favoritos
+      let favs = [];
+      if (userId && token) {
+        const favRes = await getFavorites(userId, token);
+        favs = favRes?.data || [];
+      }
+      setFavorites(favs);
+
+      // --- recomendaciones
+      let recs = [];
+      try {
+        if (userId && token) {
+          const recRes = await getPersonalRecommendations({ userId }, token);
+          recs = recRes?.data || [];
+        } else {
+          const popRes = await getPopularBooks();
+          recs = popRes?.data || [];
+        }
+      } catch {
+        const popRes = await getPopularBooks();
+        recs = popRes?.data || [];
+      }
+      
+      setRecommendations(recs.slice(0, 6));
+
+      // si el "reading" ya no está en favoritos, límpialo
+      if (reading && favs.every(f => f.id !== reading.id)) {
+        setReading(null);
+        await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
+      }
+    } catch (error) {
+      console.error('Error al refrescar:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId, token, reading]);
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Header greeting="¡Hola!" greetingStyle={styles.greeting} />
+      <View style={styles.backgroundDecoration} />
+      <ScrollView 
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#5A4FFF']} // Android
+            tintColor="#5A4FFF" // iOS
+            title="Actualizando..." // iOS
+            titleColor="#5A4FFF" // iOS
+          />
+        }
+      >
+        <Header 
+          greeting="Mi Biblioteca" 
+          user={null} // Se obtendrá del AuthContext
+          onProfilePress={() => navigation?.navigate?.('Profile')}
+        />
 
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
@@ -294,7 +359,7 @@ export default function LibraryScreen() {
                     if (p?.totalPages) {
                       const pct = readingProgressPercent ?? 0;
                       const read = p.pagesRead ?? 0;
-                      return `${pct}% · ${read}/${p.totalPages} pág.`;
+                      return `${pct}% · ${read}/${p.totalPages} páginas`;
                     }
                     return 'Páginas no definidas';
                   })()}
@@ -350,12 +415,10 @@ export default function LibraryScreen() {
               titleStyle={styles.title}
               bookTitleStyle={styles.subtitle}
               authorStyle={styles.subtitle}
-              books={(recommendations || []).map((book) => ({
-                ...book,
-                image: { uri: coverUriFromBook(book) },
-              }))}
+              books={recommendations || []}  // Los libros ya vienen con imagen de la BD
               onSeeAll={() => navigation?.navigate?.('Explore')}
               onPressBook={openBookDetails}
+              showSeeAll={(recommendations || []).length > 6}
             />
           )}
         </View>
@@ -371,20 +434,21 @@ export default function LibraryScreen() {
               data={favorites}
               horizontal
               keyExtractor={(item) => item.id?.toString() || item.key || item.title}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onLongPress={() => chooseReading(item)}
-                  onPress={() => openBookDetails(item)}
-                >
-                  <BookCard
-                    {...item}
-                    image={{ uri: coverUriFromBook(item) }}
-                    isFavorite
-                    onToggleFavorite={() => toggleFavorite(item)}
-                  />
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onLongPress={() => chooseReading(item)}
+                    onPress={() => openBookDetails(item)}
+                  >
+                    <BookCard
+                      {...item}
+                      isFavorite
+                      onToggleFavorite={() => toggleFavorite(item)}
+                    />
+                  </TouchableOpacity>
+                );
+              }}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.favList}
             />
@@ -428,7 +492,7 @@ export default function LibraryScreen() {
                     style={styles.pickerItem}
                     onPress={() => chooseReading(item)}
                   >
-                    <Image source={{ uri: coverUriFromBook(item) }} style={styles.pickerCover} />
+                    <Image source={{ uri: item.image }} style={styles.pickerCover} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.pickerTitle} numberOfLines={1}>{item.title}</Text>
                       <Text style={styles.pickerAuthor} numberOfLines={1}>{item.author || 'Desconocido'}</Text>

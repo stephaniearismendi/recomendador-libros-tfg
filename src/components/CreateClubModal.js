@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 import styles from '../styles/socialStyles';
 
 export default function CreateClubModal({ visible, onClose, favorites = [], onSubmit }) {
   const [name, setName] = useState('');
   const [selected, setSelected] = useState(null);
+  const { user } = useContext(AuthContext);
 
   const favs = useMemo(
     () => (favorites || []).map(b => ({
@@ -22,7 +24,35 @@ export default function CreateClubModal({ visible, onClose, favorites = [], onSu
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalBackdropCenter}>
         <View style={styles.modalCardWide}>
-          <Text style={styles.modalTitle}>Crear club de lectura</Text>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderInfo}>
+              <Text style={styles.modalTitle}>Crear club de lectura</Text>
+              {user && (
+                <Text style={styles.modalSubtitle}>Creado por {user.name || user.username || 'Usuario'}</Text>
+              )}
+            </View>
+            {user ? (
+              <View style={styles.modalUserAvatar}>
+                <Image 
+                  source={{ 
+                    uri: `${user.avatar || 'https://i.pravatar.cc/150?u=default'}?v=${Math.random()}&t=${Date.now()}`,
+                    cache: 'reload'
+                  }} 
+                  style={styles.modalAvatarImage}
+                />
+              </View>
+            ) : (
+              <View style={styles.modalUserAvatar}>
+                <Image 
+                  source={{ 
+                    uri: `https://i.pravatar.cc/150?u=default?t=${Date.now()}`,
+                    cache: 'reload'
+                  }} 
+                  style={styles.modalAvatarImage}
+                />
+              </View>
+            )}
+          </View>
 
           {favs.length === 0 ? (
             <>

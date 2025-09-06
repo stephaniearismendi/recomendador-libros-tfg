@@ -160,7 +160,8 @@ export default StyleSheet.create({
 
   suggestList: { paddingVertical: 6, gap: 10 },
   userChip: {
-    width: 240,
+    minWidth: 200,
+    maxWidth: 280,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -170,10 +171,81 @@ export default StyleSheet.create({
     borderRadius: 14,
     backgroundColor: CARD,
     marginRight: 10,
+    flex: 1,
   },
   userChipAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEE' },
-  userChipName: { color: TEXT, fontWeight: '700' },
+  userChipContent: { flex: 1, marginRight: 8 },
+  userChipName: { color: TEXT, fontWeight: '700', fontSize: 14 },
+  userChipBio: { color: SUBT, fontSize: 11, marginTop: 2 },
   userChipMeta: { color: SUBT, fontSize: 12, marginTop: 2 },
+  
+  userChipBtn: {
+    backgroundColor: ACCENT,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    maxWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userChipBtnText: { color: 'white', fontSize: 10, fontWeight: '600' },
+  userChipBtnOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: ACCENT,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    maxWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userChipBtnOutlineText: { color: ACCENT, fontSize: 10, fontWeight: '600' },
+  userChipBtnDisabled: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    maxWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userChipBtnDisabledText: { color: '#9CA3AF', fontSize: 10, fontWeight: '600' },
+  userChipBtnDemo: {
+    backgroundColor: '#FEF3C7', // Light yellow background for demo
+    borderWidth: 1,
+    borderColor: '#F59E0B', // Orange border for demo
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    maxWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userChipBtnDemoText: { 
+    color: '#92400E', // Dark orange text for demo
+    fontSize: 10, 
+    fontWeight: '600' 
+  },
+  
+  createTestUsersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F1FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  createTestUsersText: {
+    color: ACCENT,
+    fontSize: 12,
+    fontWeight: '600',
+  },
 
   clubList: { paddingVertical: 6, gap: 12 },
   clubCard: {
@@ -206,7 +278,28 @@ export default StyleSheet.create({
     padding: 16,
   },
   modalCardWide: { backgroundColor: CARD, borderRadius: 16, padding: 14, width: '100%' },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: TEXT, marginBottom: 8 },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalHeaderInfo: {
+    flex: 1,
+  },
+  modalUserAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: ACCENT,
+    overflow: 'hidden',
+  },
+  modalAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: TEXT, marginBottom: 4 },
   modalSubtitle: { fontSize: 14, fontWeight: '700', color: TEXT, marginTop: 8, marginBottom: 6 },
   inputMultiline: {
     minHeight: 48,
@@ -255,6 +348,9 @@ export default StyleSheet.create({
 
   commentItem: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 6 },
   commentAvatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#EEE' },
+  commentAvatarContainer: {
+    marginRight: 10,
+  },
   commentUser: { color: TEXT, fontWeight: '700' },
   commentText: { color: TEXT },
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
@@ -266,5 +362,142 @@ export default StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#FFF',
+  },
+
+  // New professional styles
+  header: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
+    color: TEXT,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: SUBT,
+  },
+  userAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: ACCENT,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+
+  badge: {
+    backgroundColor: ACCENT,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Poppins-Bold',
+  },
+
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#e63946',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ACCENT,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+  },
+
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: SUBT,
+    fontFamily: 'Poppins-Regular',
+  },
+
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  createFirstButton: {
+    marginTop: 16,
+    backgroundColor: ACCENT,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  createFirstText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+  },
+
+  activityActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addActivityButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  addActivityText: {
+    color: ACCENT,
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
   },
 });

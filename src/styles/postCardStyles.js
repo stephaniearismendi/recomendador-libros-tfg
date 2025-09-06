@@ -21,6 +21,19 @@ export default StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
+  unfollowButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  unfollowText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#dc2626',
+  },
   avatar: {
     width: 42,
     height: 42,

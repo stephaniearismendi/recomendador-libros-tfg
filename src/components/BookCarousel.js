@@ -10,8 +10,22 @@ export default function BookCarousel({
   authorStyle,
   onPressBook,
   onSeeAll,
+  showSeeAll = true,
 }) {
   const renderItem = ({ item }) => {
+    // Debug logging para libros sin descripción/portada
+    if (!item?.description || !item?.image) {
+      console.log('🔍 BookCarousel Debug - Libro sin datos completos:', {
+        title: item?.title,
+        author: item?.author,
+        hasDescription: !!item?.description,
+        hasImage: !!item?.image,
+        imageType: typeof item?.image,
+        imageValue: item?.image,
+        allKeys: Object.keys(item || {})
+      });
+    }
+    
     const src = item?.image?.uri
       ? { uri: item.image.uri }
       : typeof item?.image === 'string'
@@ -20,13 +34,18 @@ export default function BookCarousel({
 
     return (
       <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={() => onPressBook?.(item)}>
-        <Image source={src} style={styles.bookImage} />
-        <Text style={[styles.bookTitle, bookTitleStyle]} numberOfLines={2}>
-          {item?.title || 'Sin título'}
-        </Text>
-        <Text style={[styles.bookAuthor, authorStyle]} numberOfLines={1}>
-          {item?.author || item?.authors?.[0]?.name || 'Autor desconocido'}
-        </Text>
+        <View style={styles.imageContainer}>
+          <Image source={src} style={styles.bookImage} />
+        </View>
+        
+        <View style={styles.contentContainer}>
+          <Text style={[styles.bookTitle, bookTitleStyle]} numberOfLines={2}>
+            {item?.title || 'Sin título'}
+          </Text>
+          <Text style={[styles.bookAuthor, authorStyle]} numberOfLines={1}>
+            {item?.author || item?.authors?.[0]?.name || 'Autor desconocido'}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -35,10 +54,12 @@ export default function BookCarousel({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.sectionTitle, titleStyle]}>{title}</Text>
-        <TouchableOpacity style={styles.seeAllBtn} onPress={onSeeAll}>
-          <Text style={styles.seeAllText}>Ver todo</Text>
-          <MaterialIcons name="arrow-forward-ios" size={14} color="#6366F1" />
-        </TouchableOpacity>
+        {showSeeAll && onSeeAll && (
+          <TouchableOpacity style={styles.seeAllBtn} onPress={onSeeAll}>
+            <Text style={styles.seeAllText}>Ver todo</Text>
+            <MaterialIcons name="arrow-forward-ios" size={14} color="#6366F1" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
@@ -82,41 +103,62 @@ const styles = StyleSheet.create({
   },
   seeAllText: { color: '#6366F1', fontSize: 13, fontFamily: 'Poppins-Medium', marginRight: 2 },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
-    paddingHorizontal: 10,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 12,
     marginRight: 16,
-    width: 120,
+    width: 130,
+    height: 240, // Altura fija para consistencia
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
+    justifyContent: 'space-between',
+    shadowColor: 'rgba(0,0,0,0.06)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
     elevation: 2,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EAE7E1',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   bookImage: {
-    width: 92,
-    height: 132,
-    borderRadius: 8,
-    marginBottom: 6,
-    backgroundColor: '#e0e0e0',
-    alignSelf: 'center',
+    width: 100,
+    height: 145,
+    borderRadius: 12,
+    backgroundColor: '#F7F6F3',
+    shadowColor: 'rgba(0,0,0,0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   bookTitle: {
     fontSize: 14,
     fontFamily: 'Poppins-Bold',
-    color: '#222',
+    color: '#1F2328',
     textAlign: 'center',
-    marginBottom: 2,
-    marginTop: 0,
+    marginBottom: 4,
+    lineHeight: 18,
+    minHeight: 36, // Altura mínima para 2 líneas
   },
   bookAuthor: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Poppins-Regular',
     color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 0,
+    marginBottom: 8,
+    lineHeight: 16,
+    minHeight: 16, // Altura mínima para 1 línea
   },
 });

@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import TabNavigator from './TabNavigator';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
+import ClubRoomScreen from '../screens/ClubRoomScreen';
 
 const Stack = createStackNavigator();
 
@@ -25,6 +26,14 @@ export default function MainNavigator() {
         <>
           <Stack.Screen name="Tabs" component={TabNavigator} />
           <Stack.Screen name="BookDetail" component={BookDetailScreen} />
+          <Stack.Screen
+            name="ClubRoom"
+            component={ClubRoomScreen}
+            options={{
+              headerShown: true,
+              title: 'Club de lectura',
+            }}
+          />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
