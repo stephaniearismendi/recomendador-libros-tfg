@@ -8,6 +8,17 @@ export default function StoryViewer({ visible, stories = [], startIndex = 0, onC
   const timer = useRef(null);
   const slides = stories[i]?.slides || [];
   const cur = slides[j];
+  
+  console.log('📚 StoryViewer render:', {
+    visible,
+    storiesCount: stories.length,
+    startIndex,
+    currentStoryIndex: i,
+    currentStory: stories[i],
+    slidesCount: slides.length,
+    currentSlideIndex: j,
+    currentSlide: cur
+  });
 
   useEffect(() => { if (visible) { setI(startIndex); setJ(0); } }, [visible, startIndex]);
 
@@ -31,6 +42,22 @@ export default function StoryViewer({ visible, stories = [], startIndex = 0, onC
   }, [visible, i, j, stories.length, slides.length, onClose]);
 
   if (!visible) return null;
+  
+  if (slides.length === 0) {
+    console.log('📚 StoryViewer: No slides available, showing empty state');
+    return (
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <View style={styles.viewerBackdrop}>
+          <View style={styles.viewerCard}>
+            <Text style={styles.viewerCaption}>No hay historias disponibles</Text>
+            <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
+              <Text style={styles.viewerCloseText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

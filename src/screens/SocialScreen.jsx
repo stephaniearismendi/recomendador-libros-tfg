@@ -47,6 +47,7 @@ import {
   createPost,
   createStory,
   getStories,
+  getUserStories,
   cleanExpiredStories,
   deletePost,
   seedStories,
@@ -62,6 +63,10 @@ const CLUBS_CACHE_KEY = 'social:clubs';
 const FOLLOW_CACHE_KEY = (uid) => `social:following:${uid}`;
 const FOLLOWING_CACHE_KEY = 'social:following';
 const FOLLOWING_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const STORIES_CACHE_KEY = 'social:stories';
+const STORIES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const POSTS_CACHE_KEY = 'social:posts';
+const POSTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Smart feed configuration
 const MAX_FEED_POSTS = 15; // Maximum number of posts to show in feed
@@ -382,8 +387,8 @@ export default function SocialScreen() {
     setLoading(true);
     setError(null);
     try {
-      // Load feed and favorites in parallel
-      const [feedRes, favoritesRes] = await Promise.all([
+      // Load feed, favorites, and current user stories in parallel
+      const [feedRes, favoritesRes, currentUserStoriesRes] = await Promise.all([
         getFeed(token).catch((error) => {
           if (error?.response?.status === 401 && error?.response?.data?.message?.includes('token')) {
             logout();
@@ -391,6 +396,7 @@ export default function SocialScreen() {
           return { data: [] };
         }),
         getFavorites(userId, token).catch(() => ({ data: [] })),
+        getUserStories(userId).catch(() => ({ data: { stories: [] } })),
       ]);
 
 
@@ -444,26 +450,78 @@ export default function SocialScreen() {
          // Backend returns grouped stories by user: [{ user: {...}, stories: [...] }]
          // Convert to grouped format expected by frontend - one entry per user with all their stories
          const backendStories = [];
-         (storiesRes.data || []).forEach(userGroup => {
-           const user = userGroup.user;
+         
+         if (storiesRes.data && Array.isArray(storiesRes.data)) {
+           // First, always add current user's story circle (even if empty)
+           const currentUserStory = {
+             id: userId,
+             name: 'Tú',
+             avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId}`,
+             slides: [],
+             isCurrentUser: true
+           };
            
-           // Create slides array from all stories of this user
-           const slides = userGroup.stories.map(story => ({
-             id: story.id,
-             uri: story.book?.cover || FALLBACK_COVER,
-             caption: story.content || story.book?.title || 'Mi historia'
-           }));
+          // Use the current user stories we loaded separately
+          const currentUserStories = currentUserStoriesRes.data?.stories || [];
+          
+          if (currentUserStories.length > 0) {
+            console.log('📚 Current user stories from separate API call:', currentUserStories);
+            currentUserStory.slides = currentUserStories.map((story) => {
+              const slide = {
+                id: story.id,
+                uri: story.book?.cover || story.bookCover || story.imageUrl || FALLBACK_COVER,
+                caption: story.content || story.book?.title || story.bookTitle || 'Mi historia'
+              };
+              console.log('📚 Processed story slide:', slide);
+              return slide;
+            });
+          }
            
-           // Create one entry per user with all their stories as slides
-           backendStories.push({
-             id: user.id, // Use user ID instead of story ID
-             name: user.name || 'Usuario',
-             avatar: user.avatar || `https://i.pravatar.cc/150?u=${user.id}`,
-             slides: slides
+           // Always add current user first
+           backendStories.push(currentUserStory);
+           
+           // Then add other users' stories
+           storiesRes.data.forEach((userGroup) => {
+             const user = userGroup.user;
+             
+             // Skip current user (already added above)
+             if (String(user.id) === String(userId)) {
+               return;
+             }
+             
+             const stories = userGroup.stories || [];
+             
+             // Create slides array from all stories of this user
+             const slides = stories.map((story) => ({
+               id: story.id,
+               uri: story.book?.cover || story.bookCover || story.imageUrl || FALLBACK_COVER,
+               caption: story.content || story.book?.title || story.bookTitle || 'Mi historia'
+             }));
+             
+             // Only add users who have stories
+             if (slides.length > 0) {
+               backendStories.push({
+                 id: user.id,
+                 name: user.name || 'Usuario',
+                 avatar: user.avatar || `https://i.pravatar.cc/150?u=${user.id}`,
+                 slides: slides,
+                 isCurrentUser: false
+               });
+             }
            });
-         });
+         } else {
+           // Even if no stories data, add current user's empty story circle
+           backendStories.push({
+             id: userId,
+             name: 'Tú',
+             avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId}`,
+             slides: [],
+             isCurrentUser: true
+           });
+         }
          
          setStories(backendStories);
+         
       } catch (error) {
         console.error('Error loading stories:', error);
         setStories([]);
@@ -471,6 +529,13 @@ export default function SocialScreen() {
 
        // Convert backend posts to our format
        const allBackendPosts = (feedRes.data || []).map((p) => {
+         console.log('📝 Processing post from backend:', {
+           postId: p.id,
+           hasBook: !!p.book,
+           bookData: p.book,
+           text: p.text?.substring(0, 50) + '...'
+         });
+         
          // Backend returns: { user: { id, name, avatar }, ... }
          // Frontend expects: { user: { id, name, avatar }, ... }
          const postUserId = p.user?.id;
@@ -482,14 +547,22 @@ export default function SocialScreen() {
            return null;
          }
          
+         // Process book information more robustly
+         let bookInfo = null;
+         if (p.book) {
+           bookInfo = {
+             id: p.book.id || p.book.title || 'unknown',
+             title: p.book.title || 'Sin título',
+             author: p.book.author || 'Autor desconocido',
+             cover: coverUriFromBook(p.book)
+           };
+         }
          
-         return {
+         const processedPost = {
            id: p.id,
            user: { id: String(postUserId), name: postUserName, avatar: postUserAvatar },
            text: p.text,
-           book: p.book
-             ? { id: p.book.id, title: p.book.title, author: p.book.author || '', cover: coverUriFromBook(p.book) }
-             : null,
+           book: bookInfo,
            likes: p.likes || 0,
            comments: (p.comments || []).map((c) => ({
              id: c.id,
@@ -500,6 +573,15 @@ export default function SocialScreen() {
            time: p.time,
            _source: 'backend',
          };
+         
+        console.log('📝 Processed post:', {
+          postId: processedPost.id,
+          hasBook: !!processedPost.book,
+          bookTitle: processedPost.book?.title,
+          bookData: processedPost.book
+        });
+         
+         return processedPost;
        }).filter(Boolean); // Remove null entries
       
       // Filter posts to only show from followed users + current user (exclude timestamp)
@@ -513,7 +595,16 @@ export default function SocialScreen() {
       const MAX_POSTS = 10;
       const randomPosts = getRandomPosts(relevantPosts, MAX_POSTS);
       
+      console.log('📝 Setting posts with book info:', randomPosts.map(p => ({
+        id: p.id,
+        hasBook: !!p.book,
+        bookTitle: p.book?.title
+      })));
+      
       setAllPosts(randomPosts);
+      
+      // Save to cache
+      await setCached(POSTS_CACHE_KEY, randomPosts);
       } catch (error) {
         console.error('Error loading feed:', error);
         setError('Error al cargar el feed');
@@ -522,14 +613,7 @@ export default function SocialScreen() {
     }
   }, [token, userId, popular, logout]);
 
-  useEffect(() => {
-    if (token && userId) {
-      console.log('🔄 useEffect - Calling loadRemote with userId:', userId);
-      loadRemote();
-    } else {
-      console.log('⏸️ useEffect - Not calling loadRemote:', { hasToken: !!token, userId });
-    }
-  }, [token, userId, loadRemote]);
+
 
   // Load data when screen comes into focus - use the same logic as loadRemote for consistency
   useFocusEffect(
@@ -540,8 +624,10 @@ export default function SocialScreen() {
       }
       
       console.log('🔄 useFocusEffect - Loading with userId:', userId);
-      // Use the same loadRemote function to ensure consistency
-      loadRemote();
+      const loadData = async () => {
+        await loadRemote();
+      };
+      loadData();
     }, [userId, token, loadRemote])
   );
 
@@ -645,7 +731,9 @@ export default function SocialScreen() {
       
       setPosting(true);
       try {
+        console.log('📝 Sending post data to backend:', postData);
         const response = await createPost(postData, token);
+        console.log('📝 Post creation response:', response.data);
         
         // Add the new post to the feed
         const newPost = {
@@ -713,26 +801,21 @@ export default function SocialScreen() {
       try {
         const storyData = {
           content: caption || (book?.title ?? 'Mi historia'),
-          imageUrl: book ? (book.cover || book.coverUrl || book.image || FALLBACK_COVER) : FALLBACK_COVER,
           bookTitle: book?.title || null,
-          bookCover: book ? (book.cover || book.coverUrl || book.image) : null
+          bookCover: book?.cover || book?.coverUrl || book?.image || FALLBACK_COVER
         };
+        
+        console.log('📚 Publishing story with data:', storyData);
+        console.log('📚 Book data received:', book);
         
         const response = await createStory(storyData, token);
         
-        // Add the new story to the list
-        const newStory = {
-          id: response.data.id,
-          name: me.name,
-          avatar: me.avatar,
-          slides: [{
-            id: response.data.id,
-            uri: storyData.imageUrl,
-            caption: storyData.content
-          }]
-        };
+        console.log('📚 Story created response:', response.data);
+        console.log('📚 Response status:', response.status);
         
-        setStories((prev) => [newStory, ...prev]);
+        // Reload all data to get the latest stories
+        await loadRemote();
+        
         setComposeStoryVisible(false);
         Alert.alert('Éxito', 'Historia publicada correctamente');
       } catch (error) {
@@ -740,7 +823,7 @@ export default function SocialScreen() {
         Alert.alert('Error', 'No se pudo publicar la historia');
       }
     },
-    [me, token],
+    [me, token, userId, loadRemote],
   );
 
   const handleBookPress = useCallback((book) => {
@@ -1127,6 +1210,27 @@ const submitCreateClub = useCallback(
         <View style={[baseStyles.card, { marginTop: 16 }]}>
           <View style={baseStyles.rowBetween}>
             <Text style={baseStyles.sectionTitle}>Historias</Text>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => setComposeStoryVisible(true)}
+            >
+              <MaterialIcons name="add" size={16} color="#5A4FFF" />
+              <Text style={styles.sectionLink}>Crear historia</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: '#ff6b6b', marginTop: 10 }]}
+              onPress={async () => {
+                console.log('🧪 Manual load current user stories - START');
+                console.log('🧪 Current stories state:', stories);
+                await loadCurrentUserStories();
+                console.log('🧪 Manual load current user stories - END');
+                console.log('🧪 Stories state after:', stories);
+              }}
+            >
+              <MaterialIcons name="refresh" size={16} color="white" />
+              <Text style={[styles.sectionLink, { color: 'white' }]}>Debug: Cargar mis historias</Text>
+            </TouchableOpacity>
           </View>
           <FlatList
             data={stories}
@@ -1138,8 +1242,45 @@ const submitCreateClub = useCallback(
               <StoryAvatar
                 name={item.name}
                 avatarUri={item.avatar}
-                active={index % 2 === 0}
-                onPress={() => setViewer({ open: true, index })}
+                active={item.slides && item.slides.length > 0}
+                onPress={() => {
+                  console.log('📚 Story circle clicked:', {
+                    isCurrentUser: item.isCurrentUser,
+                    slidesCount: item.slides?.length || 0,
+                    slides: item.slides
+                  });
+                  
+                  if (item.isCurrentUser) {
+                    // If it's current user's story, find their index in the stories array
+                    const currentUserIndex = stories.findIndex(story => story.isCurrentUser);
+                    console.log('📚 Opening current user stories viewer:', {
+                      currentUserIndex,
+                      totalStories: stories.length,
+                      currentUserStory: stories[currentUserIndex],
+                      currentUserSlides: stories[currentUserIndex]?.slides?.length || 0
+                    });
+                    
+                    if (currentUserIndex >= 0) {
+                      setViewer({ open: true, index: currentUserIndex });
+                    } else {
+                      console.log('📚 Current user story not found in stories array');
+                      // Create a temporary current user story with empty slides
+                      const tempCurrentUserStory = {
+                        id: userId,
+                        name: 'Tú',
+                        avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId}`,
+                        slides: [],
+                        isCurrentUser: true
+                      };
+                      setStories(prev => [tempCurrentUserStory, ...prev]);
+                      setViewer({ open: true, index: 0 });
+                    }
+                  } else {
+                    console.log('📚 Opening other user stories viewer');
+                    // If it's another user's story, open story viewer
+                    setViewer({ open: true, index });
+                  }
+                }}
               />
             )}
           />
@@ -1294,11 +1435,21 @@ const submitCreateClub = useCallback(
         onAdd={(text) => commentsFor && onAddComment(commentsFor.id, text)}
       />
 
+      {viewer.open && console.log('📚 StoryViewer opening with:', {
+        visible: viewer.open,
+        storiesCount: stories.length,
+        startIndex: viewer.index,
+        currentStory: stories[viewer.index],
+        currentStorySlides: stories[viewer.index]?.slides?.length || 0
+      })}
       <StoryViewer
         visible={viewer.open}
         stories={stories}
         startIndex={viewer.index}
-        onClose={() => setViewer({ open: false, index: 0 })}
+        onClose={() => {
+          console.log('📚 StoryViewer closing');
+          setViewer({ open: false, index: 0 });
+        }}
       />
 
       <CreatePostModal
