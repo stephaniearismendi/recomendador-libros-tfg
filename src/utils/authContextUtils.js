@@ -56,7 +56,13 @@ export const validateUserData = (userData) => {
     email: userData.email,
     avatar: userData.avatar,
     bio: userData.bio,
-    _count: userData._count
+    _count: userData._count,
+    createdAt: userData.createdAt,
+    created_at: userData.created_at,
+    joinedAt: userData.joinedAt,
+    joined_at: userData.joined_at,
+    dateCreated: userData.dateCreated,
+    registrationDate: userData.registrationDate
   };
 };
 

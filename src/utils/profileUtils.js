@@ -94,13 +94,20 @@ export const formatUserStats = (user) => {
   };
 };
 
-export const formatJoinDate = (createdAt) => {
-  if (!createdAt) return 'Fecha no disponible';
+export const formatJoinDate = (user) => {
+  if (!user) return 'Fecha no disponible';
   
-  return new Date(createdAt).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-  });
+  const dateField = user.createdAt || user.created_at || user.joinedAt || user.joined_at || user.dateCreated || user.registrationDate;
+  if (!dateField) return 'Fecha no disponible';
+  
+  try {
+    return new Date(dateField).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+    });
+  } catch (error) {
+    return 'Fecha no disponible';
+  }
 };
 
 export const getInitialEditData = (user) => {

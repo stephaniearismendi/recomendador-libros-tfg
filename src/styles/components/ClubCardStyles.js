@@ -1,9 +1,10 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
     width: 220,
     marginRight: 14,
+    marginBottom: Platform.OS === 'android' ? 20 : 0,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 12,

@@ -62,7 +62,7 @@ import {
 import { getBookCoverUri } from '../utils/imageUtils';
 import { useCustomSafeArea } from '../utils/safeAreaUtils';
 
-const CLUBS_CACHE_TTL = 6 * 60 * 60 * 1000;
+const CLUBS_CACHE_TTL = 5 * 60 * 1000;
 const CLUBS_CACHE_KEY = 'social:clubs';
 const POSTS_CACHE_KEY = 'social:posts';
 const POSTS_CACHE_TTL = 5 * 60 * 1000;
@@ -255,6 +255,14 @@ export default function SocialScreen() {
     useCallback(() => {
       if (!userId || !token) return;
       loadRemote();
+      
+      // Refresh clubs to sync with other devices
+      getClubs().then(res => {
+        if (res?.data) {
+          setClubs(res.data);
+          setCached(CLUBS_CACHE_KEY, res.data);
+        }
+      }).catch(() => {});
     }, [userId, token, loadRemote])
   );
 
@@ -267,7 +275,7 @@ export default function SocialScreen() {
   }, [allPosts]);
 
   const filteredSuggestions = useMemo(() => {
-    // Show all suggestions (already filtered in loadRemote)
+    // Show all suggestions
     return suggestions;
   }, [suggestions]);
 
@@ -276,7 +284,7 @@ export default function SocialScreen() {
     try {
       await loadRemote();
     } catch (error) {
-      // Silently handle refresh error
+      // Handle refresh error
     } finally {
       setRefreshing(false);
     }
@@ -359,21 +367,6 @@ export default function SocialScreen() {
     [userId, user, token],
   );
 
-  const handleFollowUser = useCallback(
-    async (targetUserId) => {
-      if (!hasValidToken(token)) return;
-      await onToggleFollow(targetUserId);
-    },
-    [onToggleFollow],
-  );
-
-  const handleUnfollowUser = useCallback(
-    async (targetUserId) => {
-      if (!hasValidToken(token)) return;
-      await onToggleFollow(targetUserId);
-    },
-    [onToggleFollow],
-  );
 
   const publishStory = useCallback(
     async ({ caption, book }) => {
@@ -467,13 +460,12 @@ export default function SocialScreen() {
           setFollowing(result.following);
           
           if (result.newState) {
-            // User was followed - add their posts to feed without full refresh
             try {
               const feedRes = await getFeed(token);
               const followedUserIds = Object.keys(result.following).filter(id => result.following[id] && id !== 'ts');
               const newPosts = processFeedPosts(feedRes.data, followedUserIds, userId, MAX_FEED_POSTS);
               
-              // Only add new posts from the followed user, don't replace entire feed
+              // Only add new posts from the followed user  
               setAllPosts(prevPosts => {
                 const existingPostIds = new Set(prevPosts.map(p => p.id));
                 const newUserPosts = newPosts.filter(post => 
@@ -482,7 +474,7 @@ export default function SocialScreen() {
                 return [...newUserPosts, ...prevPosts];
               });
             } catch (error) {
-              // Silently handle feed refresh error
+              // Handle feed refresh error
             }
           } else {
             // User was unfollowed - remove their posts and stories immediately

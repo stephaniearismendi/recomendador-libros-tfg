@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
       const response = await getUserProfile(authToken);
       const userData = response?.data?.user;
       
-      
       if (userData) {
         setUser(validateUserData(userData));
       } else {
