@@ -348,7 +348,7 @@ export default function LibraryScreen() {
           )}
         </View>
 
-        <View style={libraryStyles.card}>
+        <View style={libraryStyles.lastCard}>
           <View style={libraryStyles.rowBetween}>
             <Text style={libraryStyles.sectionTitle}>Reto de lectura {year}</Text>
             <TouchableOpacity style={libraryStyles.chipLight} onPress={openChallengeModal}>

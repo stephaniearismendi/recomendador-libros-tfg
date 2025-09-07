@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY } from '../baseStyles';
 
 export const profileStyles = StyleSheet.create({
@@ -158,7 +158,7 @@ export const profileStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.CARD,
-    marginBottom: 24,
+    marginBottom: Platform.OS === 'android' ? 80 : 24,
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,

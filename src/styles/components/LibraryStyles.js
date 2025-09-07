@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { COLORS } from '../baseStyles';
 
 export const libraryStyles = StyleSheet.create({
@@ -15,6 +15,19 @@ export const libraryStyles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+  },
+  lastCard: {
+    marginBottom: Platform.OS === 'android' ? 80 : 16,
     backgroundColor: COLORS.CARD,
     borderRadius: 20,
     padding: 20,
