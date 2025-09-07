@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useContext } from 'react';
 import {
   View,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -61,6 +60,7 @@ import {
   filterPostsByUser 
 } from '../utils/postProcessingUtils';
 import { getBookCoverUri } from '../utils/imageUtils';
+import { useCustomSafeArea } from '../utils/safeAreaUtils';
 
 const CLUBS_CACHE_TTL = 6 * 60 * 60 * 1000;
 const CLUBS_CACHE_KEY = 'social:clubs';
@@ -71,6 +71,7 @@ const MAX_FEED_POSTS = 10;
 export default function SocialScreen() {
   const navigation = useNavigation();
   const { token, logout, user } = useContext(AuthContext);
+  const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   const [userId, setUserId] = useState(null);
 
   // Refresh user data when component mounts
@@ -579,9 +580,12 @@ const submitCreateClub = useCallback(
 
   const followingCount = followedIds.length;
 
+  const containerStyle = [baseStyles.container, getContainerStyle()];
+  const scrollStyle = [baseStyles.scroll, getScrollStyle()];
+
   if (error && !loading) {
     return (
-      <SafeAreaView style={baseStyles.container}>
+      <View style={containerStyle}>
         <View style={SocialStyles.errorContainer}>
           <MaterialIcons name="error-outline" size={64} color="#e63946" />
           <Text style={SocialStyles.errorText}>{error}</Text>
@@ -590,15 +594,15 @@ const submitCreateClub = useCallback(
             <Text style={SocialStyles.retryText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={baseStyles.container}>
+    <View style={containerStyle}>
       <View style={SocialStyles.backgroundDecoration} />
       <ScrollView
-        contentContainerStyle={baseStyles.scroll}
+        contentContainerStyle={scrollStyle}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
@@ -826,6 +830,6 @@ const submitCreateClub = useCallback(
         loading={posting}
         favorites={userFavorites}
       />
-    </SafeAreaView>
+    </View>
   );
 }

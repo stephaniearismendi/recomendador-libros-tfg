@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, SafeAreaView, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import AdvancedFilters from '../components/AdvancedFilters';
 import BookCard from '../components/BookCard';
 import { baseStyles, COLORS } from '../styles/baseStyles';
 import { homeStyles } from '../styles/components';
+import { useCustomSafeArea } from '../utils/safeAreaUtils';
 import { 
   loadHomeData, 
   applyGenreFilters, 
@@ -12,6 +13,7 @@ import {
 } from '../utils/homeUtils';
 
 export default function HomeScreen() {
+  const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   const [books, setBooks] = useState([]);
   const [adaptedBooks, setAdaptedBooks] = useState([]);
   const [nytBooks, setNytBooks] = useState([]);
@@ -98,10 +100,13 @@ export default function HomeScreen() {
     </View>
   );
 
+  const containerStyle = [baseStyles.container, getContainerStyle()];
+  const scrollStyle = [baseStyles.scroll, getScrollStyle()];
+
   return (
-    <SafeAreaView style={baseStyles.container}>
+    <View style={containerStyle}>
       <ScrollView 
-        contentContainerStyle={baseStyles.scroll}
+        contentContainerStyle={scrollStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -142,6 +147,6 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

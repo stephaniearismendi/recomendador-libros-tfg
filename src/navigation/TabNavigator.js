@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -14,15 +15,26 @@ const TabNavigator = () => {
   const iconConfig = getTabIconConfig();
   const insets = useSafeAreaInsets();
 
+  const getTabBarStyle = () => {
+    if (Platform.OS === 'android') {
+      return {
+        height: 50 + Math.max(insets.bottom, 15),
+        paddingBottom: Math.max(insets.bottom, 15),
+        paddingTop: 5,
+      };
+    }
+    return {
+      height: 35 + insets.bottom,
+      paddingBottom: insets.bottom,
+      paddingTop: 0,
+    };
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: {
-          height: 35 + insets.bottom,
-          paddingBottom: insets.bottom,
-          paddingTop: 0,
-        },
+        tabBarStyle: getTabBarStyle(),
         tabBarIcon: ({ color, size }) => (
           <Ionicons name={iconConfig[route.name]} size={size} color={color} />
         ),

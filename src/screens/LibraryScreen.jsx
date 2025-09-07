@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useMemo, useContext } from 're
 import {
   View,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
   Text,
   FlatList,
@@ -33,10 +32,12 @@ import {
   validateProgressInput,
   getBookKey,
 } from '../utils/libraryUtils';
+import { useCustomSafeArea } from '../utils/safeAreaUtils';
 
 export default function LibraryScreen() {
   const navigation = useNavigation();
   const { token, user } = useContext(AuthContext);
+  const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   const year = new Date().getFullYear();
   const userId = user?.id || null;
 
@@ -215,11 +216,14 @@ export default function LibraryScreen() {
     }
   }, [userId, token, reading]);
 
+  const containerStyle = [baseStyles.container, getContainerStyle()];
+  const scrollStyle = [baseStyles.scroll, getScrollStyle()];
+
   return (
-    <SafeAreaView style={baseStyles.container}>
+    <View style={containerStyle}>
       <View style={libraryStyles.backgroundDecoration} />
       <ScrollView 
-        contentContainerStyle={baseStyles.scroll}
+        contentContainerStyle={scrollStyle}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -491,6 +495,6 @@ export default function LibraryScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }

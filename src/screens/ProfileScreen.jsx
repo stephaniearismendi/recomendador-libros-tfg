@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Switch,
 } from 'react-native';
+import { useCustomSafeArea } from '../utils/safeAreaUtils';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { getUserProfile, updateUserProfile, updateUserAvatar, changePassword, deleteAccount } from '../api/api';
@@ -38,6 +39,7 @@ const AVATAR_PLACEHOLDER = 'https://i.pravatar.cc/150?u=default';
 
 export default function ProfileScreen() {
   const { token, user, logout, refreshUserData } = useContext(AuthContext);
+  const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,9 +47,11 @@ export default function ProfileScreen() {
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
   const [editData, setEditData] = useState({ name: '', username: '', bio: '' });
   const [passwordData, setPasswordData] = useState(getInitialPasswordData());
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [updating, setUpdating] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -117,14 +121,18 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleAvatarChange = async (avatarUrl) => {
-    if (!token) return;
+  const handleAvatarChange = async () => {
+    if (!token || !avatarUrl.trim()) {
+      Alert.alert('Error', 'Por favor ingresa una URL válida');
+      return;
+    }
     
     try {
-      
-      const response = await updateUserAvatar(avatarUrl, token);
+      const response = await updateUserAvatar(avatarUrl.trim(), token);
       if (response?.data?.user) {
         await refreshUserData();
+        setAvatarModalVisible(false);
+        setAvatarUrl('');
         Alert.alert('Éxito', 'Avatar actualizado correctamente');
       }
     } catch (error) {
@@ -185,20 +193,23 @@ export default function ProfileScreen() {
     showLogoutConfirmation(logout);
   };
 
+  const containerStyle = [baseStyles.container, getContainerStyle()];
+  const scrollStyle = [baseStyles.scroll, getScrollStyle()];
+
   if (loading) {
     return (
-      <SafeAreaView style={profileStyles.container}>
+      <View style={containerStyle}>
         <View style={profileStyles.loadingContainer}>
           <ActivityIndicator size="large" color="#5A4FFF" />
           <Text style={profileStyles.loadingText}>Cargando perfil...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!user) {
     return (
-      <SafeAreaView style={profileStyles.container}>
+      <View style={containerStyle}>
         <View style={profileStyles.errorContainer}>
           <MaterialIcons name="error-outline" size={64} color="#e63946" />
           <Text style={profileStyles.errorText}>No se pudo cargar el perfil</Text>
@@ -206,7 +217,7 @@ export default function ProfileScreen() {
             <Text style={profileStyles.retryText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -214,9 +225,9 @@ export default function ProfileScreen() {
   const userAvatar = getUserAvatar(user);
 
   return (
-    <SafeAreaView style={baseStyles.container}>
+    <View style={containerStyle}>
       <ScrollView 
-        contentContainerStyle={baseStyles.scroll}
+        contentContainerStyle={scrollStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -243,16 +254,8 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={profileStyles.avatarEditButton}
               onPress={() => {
-                Alert.prompt(
-                  'Cambiar Avatar',
-                  'Ingresa la URL de tu nueva foto de perfil:',
-                  [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Actualizar', onPress: handleAvatarChange },
-                  ],
-                  'plain-text',
-                  user.avatar || ''
-                );
+                setAvatarUrl(user.avatar || '');
+                setAvatarModalVisible(true);
               }}
             >
               <MaterialIcons name="camera-alt" size={16} color="#fff" />
@@ -644,6 +647,61 @@ export default function ProfileScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+
+      <Modal
+        visible={avatarModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setAvatarModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={profileStyles.modalContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={profileStyles.modalBackdrop}>
+            <View style={profileStyles.modalContent}>
+              <View style={profileStyles.modalHeader}>
+                <Text style={profileStyles.modalTitle}>Cambiar Avatar</Text>
+                <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
+                  <MaterialIcons name="close" size={24} color={COLORS.SUBT} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={profileStyles.formContainer}>
+                <View style={profileStyles.inputContainer}>
+                  <Text style={profileStyles.inputLabel}>URL de la imagen</Text>
+                  <TextInput
+                    style={profileStyles.input}
+                    value={avatarUrl}
+                    onChangeText={setAvatarUrl}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                </View>
+              </View>
+
+              <View style={profileStyles.modalActions}>
+                <TouchableOpacity
+                  style={profileStyles.cancelButton}
+                  onPress={() => {
+                    setAvatarModalVisible(false);
+                    setAvatarUrl('');
+                  }}
+                >
+                  <Text style={profileStyles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={profileStyles.saveButton}
+                  onPress={handleAvatarChange}
+                >
+                  <Text style={profileStyles.saveButtonText}>Actualizar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
   );
 }
