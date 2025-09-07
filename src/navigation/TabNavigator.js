@@ -2,12 +2,12 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SocialScreen from '../screens/SocialScreen';
 import { getTabIconConfig } from '../utils/navigationUtils';
+import { getTabBarStyle } from '../styles/components/TabNavigatorStyles';
 
 const Tab = createBottomTabNavigator();
 
@@ -15,45 +15,11 @@ const TabNavigator = () => {
   const iconConfig = getTabIconConfig();
   const insets = useSafeAreaInsets();
 
-  const getTabBarStyle = () => {
-    if (Platform.OS === 'android') {
-      return {
-        height: 50 + Math.max(insets.bottom, 15),
-        paddingBottom: Math.max(insets.bottom, 15),
-        paddingTop: 0,
-        marginTop: 0,
-        marginBottom: 0,
-        borderTopWidth: 0,
-        elevation: 0,
-        shadowOpacity: 0,
-        backgroundColor: '#FFFFFF',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-      };
-    }
-    return {
-      height: 35 + insets.bottom,
-      paddingBottom: insets.bottom,
-      paddingTop: 0,
-      marginTop: 0,
-      marginBottom: 0,
-      borderTopWidth: 0,
-      shadowOpacity: 0,
-      backgroundColor: '#FFFFFF',
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-    };
-  };
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: getTabBarStyle(),
+        tabBarStyle: getTabBarStyle(insets),
         tabBarIcon: ({ color, size }) => (
           <Ionicons name={iconConfig[route.name]} size={size} color={color} />
         ),

@@ -76,6 +76,7 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
+      // Force complete user data reload
       await refreshUserData();
     } catch (error) {
       console.error('Error al refrescar perfil:', error);
@@ -321,7 +322,7 @@ export default function ProfileScreen() {
           <View style={profileStyles.infoItem}>
             <MaterialIcons name="calendar-today" size={20} color={COLORS.SUBT} />
             <Text style={profileStyles.infoText}>
-              Miembro desde {formatJoinDate(user.createdAt)}
+              Miembro desde {formatJoinDate(user)}
             </Text>
           </View>
         </View>

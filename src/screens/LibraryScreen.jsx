@@ -238,7 +238,7 @@ export default function LibraryScreen() {
         <Header 
           greeting="Mi Biblioteca" 
           user={null}
-          onProfilePress={() => navigation?.navigate?.('Profile')}
+          onProfilePress={() => navigation?.navigate?.('Perfil')}
         />
 
         <View style={libraryStyles.card}>

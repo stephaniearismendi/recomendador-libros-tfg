@@ -41,7 +41,7 @@ export default function HomeScreen() {
     try {
       await loadData();
     } catch (err) {
-      // Error silencioso
+      // Handle refresh error
     } finally {
       setRefreshing(false);
     }

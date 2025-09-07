@@ -74,12 +74,6 @@ export default function SocialScreen() {
   const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   const [userId, setUserId] = useState(null);
 
-  // Refresh user data when component mounts
-  useEffect(() => {
-    if (token && !user) {
-      // The AuthContext should handle this automatically
-    }
-  }, [token, user]);
 
   const [favorites, setFavorites] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
@@ -606,7 +600,7 @@ const submitCreateClub = useCallback(
           {user ? (
             <TouchableOpacity 
               style={SocialStyles.userAvatar}
-              onPress={() => navigation?.navigate?.('Profile')}
+              onPress={() => navigation?.navigate?.('Perfil')}
               activeOpacity={0.7}
             >
               <Image 
