@@ -6,13 +6,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 // CONSTANTS
 // ============================================================================
 
+import { COLORS as BASE_COLORS } from '../styles/baseStyles';
+
 const COLORS = {
-  ACCENT: '#5A4FFF',
-  BG: '#F7F6F3',
-  CARD: '#FFFFFF',
-  TEXT: '#1F2328',
-  SUBT: '#6B7280',
-  BORDER: '#EAE7E1',
+  ...BASE_COLORS,
   WHITE: '#FFFFFF',
   GRAY_LIGHT: '#E5E7EB',
   RED: '#EF4444',

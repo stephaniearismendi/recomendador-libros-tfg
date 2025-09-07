@@ -260,3 +260,18 @@ export const updateUserProfile = (profileData, token) =>
 
 export const updateUserAvatar = (avatarUrl, token) =>
   axios.put(`${API_URL}/users/avatar`, { avatar: avatarUrl }, authHeaders(token));
+
+export const changePassword = (passwordData, token) =>
+  axios.put(`${API_URL}/users/password`, passwordData, authHeaders(token));
+
+export const deleteAccount = (token) =>
+  axios.delete(`${API_URL}/users/account`, authHeaders(token));
+
+export const getBookById = (bookId) =>
+  axios.get(`${API_URL}/books/${encodeURIComponent(bookId)}`);
+
+export const deletePost = (postId, token) => {
+  const url = `${API_URL}/social/posts/${postId}`;
+  console.log('🗑️ API deletePost called:', { url, postId, hasToken: !!token });
+  return axios.delete(url, authHeaders(token));
+};

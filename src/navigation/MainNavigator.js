@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import TabNavigator from './TabNavigator';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import ClubRoomScreen from '../screens/ClubRoomScreen';
 
 const Stack = createStackNavigator();
@@ -36,7 +37,10 @@ export default function MainNavigator() {
           />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
       )}
     </Stack.Navigator>
   );

@@ -1,65 +1,91 @@
 import { StyleSheet } from 'react-native';
-
-const ACCENT = '#5A4FFF';
-const BG = '#F7F6F3';
-const CARD = '#FFFFFF';
-const TEXT = '#1F2328';
-const SUBT = '#6B7280';
-const BORDER = '#EAE7E1';
-const SHADOW = 'rgba(0,0,0,0.06)';
+import { COLORS, TYPOGRAPHY } from './baseStyles';
 
 export default StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
-  scroll: { padding: 16, paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: COLORS.BG },
+  backgroundDecoration: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: COLORS.ACCENT,
+    opacity: 0.05,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  scroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
   card: {
-    backgroundColor: CARD,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
-    shadowColor: SHADOW,
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
   },
 
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  rowEnd: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+  rowEnd: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
 
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: TEXT },
-  sectionLink: { fontSize: 14, color: ACCENT, fontWeight: '700' },
-  emptyText: { color: SUBT, paddingVertical: 8 },
+  sectionTitle: { 
+    ...TYPOGRAPHY.subheading,
+    fontSize: 18,
+  },
+  sectionLink: { 
+    ...TYPOGRAPHY.caption,
+    color: COLORS.ACCENT,
+    fontFamily: 'Poppins-Bold',
+  },
+  emptyText: { 
+    ...TYPOGRAPHY.body,
+    color: COLORS.SUBT, 
+    paddingVertical: 8,
+    textAlign: 'center',
+  },
 
   chipPrimary: {
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 20,
   },
-  chipPrimaryText: { color: 'white', fontWeight: '700' },
+  chipPrimaryText: { 
+    ...TYPOGRAPHY.small,
+    color: '#FFFFFF', 
+    fontFamily: 'Poppins-Bold',
+  },
   chipLight: {
     backgroundColor: '#F2F1FD',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 20,
   },
-  chipLightText: { color: ACCENT, fontWeight: '700' },
+  chipLightText: { 
+    ...TYPOGRAPHY.small,
+    color: COLORS.ACCENT, 
+    fontFamily: 'Poppins-Bold',
+  },
   chipPrimarySmall: {
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 16,
   },
   chipLightSmall: {
     backgroundColor: '#F2F1FD',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 16,
   },
 
   storyList: { paddingVertical: 6, gap: 12 },
@@ -71,11 +97,14 @@ export default StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     padding: 2,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.CARD,
   },
-  storyActive: { borderColor: ACCENT },
+  storyActive: { borderColor: COLORS.ACCENT },
   storyImage: { width: '100%', height: '100%', borderRadius: 32 },
-  storyName: { marginTop: 6, fontSize: 12, color: TEXT },
+  storyName: { 
+    ...TYPOGRAPHY.small,
+    marginTop: 6,
+  },
 
   viewerBackdrop: {
     flex: 1,
@@ -117,22 +146,22 @@ export default StyleSheet.create({
 
   postCard: {
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     borderRadius: 16,
     padding: 12,
     marginBottom: 10,
   },
   postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   postAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10, backgroundColor: '#EEE' },
-  postUserName: { color: TEXT, fontWeight: '700' },
-  postTime: { color: SUBT, fontSize: 12 },
-  postDots: { color: SUBT, fontSize: 18, marginLeft: 10 },
-  postText: { color: TEXT, lineHeight: 20, marginBottom: 10 },
+  postUserName: { color: COLORS.TEXT, fontWeight: '700' },
+  postTime: { color: COLORS.SUBT, fontSize: 12 },
+  postDots: { color: COLORS.SUBT, fontSize: 18, marginLeft: 10 },
+  postText: { color: COLORS.TEXT, lineHeight: 20, marginBottom: 10 },
   postBookWrap: {
     flexDirection: 'row',
     gap: 12,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     borderRadius: 12,
     padding: 8,
     marginBottom: 8,
@@ -140,15 +169,15 @@ export default StyleSheet.create({
   },
   postBookCover: { width: 56, height: 80, borderRadius: 8, backgroundColor: '#EEE' },
   postBookInfo: { flex: 1, justifyContent: 'center' },
-  postBookTitle: { color: TEXT, fontWeight: '700' },
-  postBookAuthor: { color: SUBT, marginTop: 2 },
+  postBookTitle: { color: COLORS.TEXT, fontWeight: '700' },
+  postBookAuthor: { color: COLORS.SUBT, marginTop: 2 },
   postActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: BORDER,
+    borderTopColor: COLORS.BORDER,
   },
   actionBtn: {
     paddingHorizontal: 10,
@@ -156,7 +185,7 @@ export default StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#F6F5FF',
   },
-  actionText: { color: ACCENT, fontWeight: '700' },
+  actionText: { color: COLORS.ACCENT, fontWeight: '700' },
 
   suggestList: { paddingVertical: 6, gap: 10 },
   userChip: {
@@ -167,20 +196,20 @@ export default StyleSheet.create({
     gap: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     borderRadius: 14,
-    backgroundColor: CARD,
+    backgroundColor: COLORS.CARD,
     marginRight: 10,
     flex: 1,
   },
   userChipAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEE' },
   userChipContent: { flex: 1, marginRight: 8 },
-  userChipName: { color: TEXT, fontWeight: '700', fontSize: 14 },
-  userChipBio: { color: SUBT, fontSize: 11, marginTop: 2 },
-  userChipMeta: { color: SUBT, fontSize: 12, marginTop: 2 },
+  userChipName: { color: COLORS.TEXT, fontWeight: '700', fontSize: 14 },
+  userChipBio: { color: COLORS.SUBT, fontSize: 11, marginTop: 2 },
+  userChipMeta: { color: COLORS.SUBT, fontSize: 12, marginTop: 2 },
   
   userChipBtn: {
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -193,7 +222,7 @@ export default StyleSheet.create({
   userChipBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: ACCENT,
+    borderColor: COLORS.ACCENT,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -202,7 +231,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  userChipBtnOutlineText: { color: ACCENT, fontSize: 10, fontWeight: '600' },
+  userChipBtnOutlineText: { color: COLORS.ACCENT, fontSize: 10, fontWeight: '600' },
   userChipBtnDisabled: {
     backgroundColor: '#F3F4F6',
     paddingHorizontal: 8,
@@ -242,7 +271,7 @@ export default StyleSheet.create({
     gap: 4,
   },
   createTestUsersText: {
-    color: ACCENT,
+    color: COLORS.ACCENT,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -253,17 +282,17 @@ export default StyleSheet.create({
     padding: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: CARD,
+    borderColor: COLORS.BORDER,
+    backgroundColor: COLORS.CARD,
     marginRight: 12,
   },
   clubCover: { width: '100%', height: 98, borderRadius: 10, backgroundColor: '#EEE' },
-  clubName: { marginTop: 8, color: TEXT, fontWeight: '700' },
-  clubMeta: { color: SUBT, fontSize: 12, marginBottom: 8 },
+  clubName: { marginTop: 8, color: COLORS.TEXT, fontWeight: '700' },
+  clubMeta: { color: COLORS.SUBT, fontSize: 12, marginBottom: 8 },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: CARD,
+    backgroundColor: COLORS.CARD,
     padding: 14,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
@@ -277,7 +306,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
   },
-  modalCardWide: { backgroundColor: CARD, borderRadius: 16, padding: 14, width: '100%' },
+  modalCardWide: { backgroundColor: COLORS.CARD, borderRadius: 16, padding: 14, width: '100%' },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -292,19 +321,19 @@ export default StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: ACCENT,
+    borderColor: COLORS.ACCENT,
     overflow: 'hidden',
   },
   modalAvatarImage: {
     width: '100%',
     height: '100%',
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: TEXT, marginBottom: 4 },
-  modalSubtitle: { fontSize: 14, fontWeight: '700', color: TEXT, marginTop: 8, marginBottom: 6 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.TEXT, marginBottom: 4 },
+  modalSubtitle: { fontSize: 14, fontWeight: '700', color: COLORS.TEXT, marginTop: 8, marginBottom: 6 },
   inputMultiline: {
     minHeight: 48,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     borderRadius: 12,
     padding: 10,
     backgroundColor: '#FFF',
@@ -316,14 +345,14 @@ export default StyleSheet.create({
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     backgroundColor: '#FAFAFF',
     marginRight: 10,
   },
-  attachItemActive: { borderColor: ACCENT },
+  attachItemActive: { borderColor: COLORS.ACCENT },
   attachCover: { width: '100%', height: 90, borderRadius: 8, backgroundColor: '#EEE' },
-  attachTitle: { marginTop: 6, color: TEXT, fontWeight: '700' },
-  attachAuthor: { color: SUBT, fontSize: 12 },
+  attachTitle: { marginTop: 6, color: COLORS.TEXT, fontWeight: '700' },
+  attachAuthor: { color: COLORS.SUBT, fontSize: 12 },
 
   modalCloseTiny: {
     paddingHorizontal: 12,
@@ -331,12 +360,12 @@ export default StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#EFEFFF',
   },
-  modalCloseText: { color: ACCENT, fontWeight: '700' },
+  modalCloseText: { color: COLORS.ACCENT, fontWeight: '700' },
   modalPrimaryTiny: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
   },
   modalPrimaryTinyDisabled: {
     paddingHorizontal: 12,
@@ -351,13 +380,13 @@ export default StyleSheet.create({
   commentAvatarContainer: {
     marginRight: 10,
   },
-  commentUser: { color: TEXT, fontWeight: '700' },
-  commentText: { color: TEXT },
+  commentUser: { color: COLORS.TEXT, fontWeight: '700' },
+  commentText: { color: COLORS.TEXT },
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   commentInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -381,20 +410,20 @@ export default StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: 'Poppins-Bold',
-    color: TEXT,
+    color: COLORS.TEXT,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
-    color: SUBT,
+    color: COLORS.SUBT,
   },
   userAvatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: ACCENT,
+    borderColor: COLORS.ACCENT,
     overflow: 'hidden',
   },
   avatarImage: {
@@ -411,7 +440,7 @@ export default StyleSheet.create({
   },
 
   badge: {
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -441,7 +470,7 @@ export default StyleSheet.create({
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
@@ -460,7 +489,7 @@ export default StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: SUBT,
+    color: COLORS.SUBT,
     fontFamily: 'Poppins-Regular',
   },
 
@@ -470,7 +499,7 @@ export default StyleSheet.create({
   },
   createFirstButton: {
     marginTop: 16,
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
@@ -496,7 +525,7 @@ export default StyleSheet.create({
     gap: 4,
   },
   addActivityText: {
-    color: ACCENT,
+    color: COLORS.ACCENT,
     fontSize: 12,
     fontFamily: 'Poppins-Medium',
   },

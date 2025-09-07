@@ -65,18 +65,11 @@ export default function BookCard({ id, title, author, rating, image, description
   );
 }
 
-// Paleta de colores consistente
-const ACCENT = '#5A4FFF';
-const BG = '#F7F6F3';
-const CARD = '#FFFFFF';
-const TEXT = '#1F2328';
-const SUBT = '#6B7280';
-const BORDER = '#EAE7E1';
-const SHADOW = 'rgba(0,0,0,0.06)';
+import { COLORS } from '../styles/baseStyles';
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: CARD,
+    backgroundColor: COLORS.CARD,
     borderRadius: 16,
     paddingTop: 16,
     paddingBottom: 16,
@@ -85,7 +78,7 @@ const styles = StyleSheet.create({
     height: 240, // Altura fija para consistencia
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: SHADOW,
+    shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -93,7 +86,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
   },
   imageContainer: {
     alignItems: 'center',
@@ -103,8 +96,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 145,
     borderRadius: 12,
-    backgroundColor: BG,
-    shadowColor: SHADOW,
+    backgroundColor: COLORS.BG,
+    shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 4,
@@ -119,7 +112,7 @@ const styles = StyleSheet.create({
   bookTitle: {
     fontSize: 14,
     fontFamily: 'Poppins-Bold',
-    color: TEXT,
+    color: COLORS.TEXT,
     textAlign: 'center',
     marginBottom: 4,
     lineHeight: 18,
@@ -128,7 +121,7 @@ const styles = StyleSheet.create({
   bookAuthor: {
     fontSize: 11,
     fontFamily: 'Poppins-Regular',
-    color: SUBT,
+    color: COLORS.SUBT,
     textAlign: 'center',
     marginBottom: 8,
     lineHeight: 16,
@@ -149,7 +142,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 11,
-    color: ACCENT,
+    color: COLORS.ACCENT,
     fontFamily: 'Poppins-SemiBold',
   },
 });

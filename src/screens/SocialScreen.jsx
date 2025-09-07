@@ -24,6 +24,7 @@ import CreatePostModal from '../components/CreatePostModal';
 import CommentSheet from '../components/CommentSheet';
 import { AuthContext } from '../context/AuthContext';
 import styles from '../styles/socialStyles';
+import { baseStyles, COLORS, TYPOGRAPHY } from '../styles/baseStyles';
 import {
   getFavorites,
   getPopularBooks,
@@ -47,6 +48,7 @@ import {
   createStory,
   getStories,
   cleanExpiredStories,
+  deletePost,
   seedStories,
 } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -176,27 +178,48 @@ export default function SocialScreen() {
   const me = useMemo(
     () => ({
       id: userId || 0,
-      name: 'Tú',
-      avatar: `https://i.pravatar.cc/150?u=${userId || 'me'}`,
+      name: user?.name || 'Usuario',
+      avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId || 'me'}`,
     }),
-    [userId],
+    [userId, user],
   );
 
   useEffect(() => {
-    if (user?.id) {
-      setUserId(user.id);
-    } else if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUserId(decoded?.userId || null);
-      } catch (error) {
-        console.error('Error decoding token:', error);
+    (async () => {
+      console.log('🔍 SocialScreen - Setting userId:', {
+        hasUser: !!user,
+        userId: user?.id,
+        hasToken: !!token,
+        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
+      });
+      
+      if (user?.id) {
+        setUserId(user.id);
+        console.log('✅ SocialScreen - Set userId from user object:', user.id);
+      } else if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          const extractedUserId = decoded?.userId || null;
+          setUserId(extractedUserId);
+          console.log('✅ SocialScreen - Set userId from token:', extractedUserId);
+        } catch (error) {
+          console.error('Error decoding token:', error);
+          setUserId(null);
+        }
+      } else {
         setUserId(null);
+        console.log('❌ SocialScreen - No user or token, set userId to null');
       }
-    } else {
-      setUserId(null);
-    }
+    })();
   }, [token, user]);
+
+  // Force re-render when userId changes to update PostCard ownership detection
+  useEffect(() => {
+    if (userId) {
+      console.log('🔄 userId changed, forcing update:', userId);
+      setForceUpdate(prev => prev + 1);
+    }
+  }, [userId]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -349,7 +372,12 @@ export default function SocialScreen() {
   );
 
   const loadRemote = useCallback(async () => {
-    if (!hasValidToken(token) || !userId) return;
+    if (!hasValidToken(token) || !userId) {
+      console.log('⏳ loadRemote - Waiting for userId:', { hasToken: !!token, userId });
+      return;
+    }
+    
+    console.log('🚀 loadRemote - Starting with userId:', userId);
     
     setLoading(true);
     setError(null);
@@ -454,12 +482,13 @@ export default function SocialScreen() {
            return null;
          }
          
+         
          return {
            id: p.id,
            user: { id: String(postUserId), name: postUserName, avatar: postUserAvatar },
            text: p.text,
            book: p.book
-             ? { title: p.book.title, author: p.book.author || '', cover: p.book.cover || FALLBACK_COVER }
+             ? { id: p.book.id, title: p.book.title, author: p.book.author || '', cover: coverUriFromBook(p.book) }
              : null,
            likes: p.likes || 0,
            comments: (p.comments || []).map((c) => ({
@@ -486,6 +515,7 @@ export default function SocialScreen() {
       
       setAllPosts(randomPosts);
       } catch (error) {
+        console.error('Error loading feed:', error);
         setError('Error al cargar el feed');
       } finally {
       setLoading(false);
@@ -494,7 +524,10 @@ export default function SocialScreen() {
 
   useEffect(() => {
     if (token && userId) {
+      console.log('🔄 useEffect - Calling loadRemote with userId:', userId);
       loadRemote();
+    } else {
+      console.log('⏸️ useEffect - Not calling loadRemote:', { hasToken: !!token, userId });
     }
   }, [token, userId, loadRemote]);
 
@@ -502,12 +535,14 @@ export default function SocialScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!userId || !token) {
+        console.log('⏸️ useFocusEffect - Not loading:', { hasToken: !!token, userId });
         return;
       }
       
+      console.log('🔄 useFocusEffect - Loading with userId:', userId);
       // Use the same loadRemote function to ensure consistency
       loadRemote();
-    }, [userId, token])
+    }, [userId, token, loadRemote])
   );
 
   const followedIds = useMemo(
@@ -603,6 +638,11 @@ export default function SocialScreen() {
     async (postData) => {
       if (!hasValidToken(token)) return;
       
+      if (!userId) {
+        Alert.alert('Error', 'No se pudo identificar al usuario. Inténtalo de nuevo.');
+        return;
+      }
+      
       setPosting(true);
       try {
         const response = await createPost(postData, token);
@@ -610,7 +650,11 @@ export default function SocialScreen() {
         // Add the new post to the feed
         const newPost = {
           id: response.data.id,
-          user: me,
+          user: {
+            id: String(userId), // Use the current userId directly
+            name: user?.name || 'Usuario',
+            avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId}`,
+          },
           text: postData.text,
           book: postData.book,
           likes: 0,
@@ -618,6 +662,13 @@ export default function SocialScreen() {
           createdAt: new Date().toISOString(),
           _source: 'backend',
         };
+        
+        console.log('📝 Created new post with user info:', {
+          postId: newPost.id,
+          userId: newPost.user.id,
+          userName: newPost.user.name,
+          currentUserId: userId
+        });
         
         setAllPosts(prev => [newPost, ...prev]);
         
@@ -629,7 +680,7 @@ export default function SocialScreen() {
         setPosting(false);
       }
     },
-    [token, me, allPosts],
+    [userId, user, token],
   );
 
   const handleFollowUser = useCallback(
@@ -691,6 +742,69 @@ export default function SocialScreen() {
     },
     [me, token],
   );
+
+  const handleBookPress = useCallback((book) => {
+    console.log('📚 SocialScreen - Book pressed:', book);
+    if (book && book.id) {
+      let bookKey;
+
+      // Handle different ID formats
+      if (book.id.includes('/books/')) {
+        // Format: /books/TITULO-AUTOR
+        bookKey = book.id.split('/books/')[1];
+      } else if (book.id.match(/^\d{10,13}$/)) {
+        // Format: ISBN (10-13 digits)
+        bookKey = book.id;
+      } else {
+        // Use the ID as is for other formats
+        bookKey = book.id;
+      }
+
+      console.log('📚 SocialScreen - Navigating to BookDetail with:', {
+        bookKey,
+        originalId: book.id,
+        idType: book.id.includes('/books/') ? 'path' : book.id.match(/^\d{10,13}$/) ? 'isbn' : 'other',
+        book
+      });
+
+      navigation.navigate('BookDetail', {
+        book: book,
+        bookKey: bookKey
+      });
+    } else {
+      console.log('❌ SocialScreen - Book missing ID or book data:', { hasBook: !!book, hasId: !!(book?.id) });
+    }
+  }, [navigation]);
+
+  const handleDeletePost = useCallback(async (postId) => {
+    try {
+      console.log('🗑️ Attempting to delete post:', {
+        postId,
+        postIdType: typeof postId,
+        token: token ? 'present' : 'missing'
+      });
+      
+      await deletePost(postId, token);
+      
+      // Remove the post from local state
+      setAllPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+      
+      // Force update to refresh the UI
+      setForceUpdate(prev => prev + 1);
+      
+      console.log('✅ Post deleted successfully:', postId);
+    } catch (error) {
+      console.error('❌ Error deleting post:', {
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        postId,
+        url: error.config?.url
+      });
+      Alert.alert('Error', 'No se pudo eliminar la publicación. Inténtalo de nuevo.');
+    }
+  }, [token]);
 
   const onToggleFollow = useCallback(
     async (uid) => {
@@ -971,86 +1085,48 @@ const submitCreateClub = useCallback(
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={baseStyles.container}>
+      <View style={styles.backgroundDecoration} />
       <ScrollView
         key={refreshKey}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={baseStyles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerInfo}>
-              <Text style={styles.headerTitle}>Social</Text>
-              <Text style={styles.headerSubtitle}>Conecta con otros lectores</Text>
-            </View>
-            {user ? (
-              <TouchableOpacity 
-                style={styles.userAvatar}
-                onPress={() => {
-                  navigation?.navigate?.('Profile');
-                }}
-                activeOpacity={0.7}
-              >
-                <Image 
-                  source={{ 
-                    uri: user.avatar || 'https://i.pravatar.cc/150?u=default',
-                    cache: 'reload' // Force reload to avoid cache issues
-                  }} 
-                  style={styles.avatarImage} 
-                />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.userAvatar}>
-                <Image 
-                  source={{ uri: 'https://i.pravatar.cc/150?u=default' }} 
-                  style={styles.avatarImage}
-                />
-              </View>
-            )}
+        <View style={styles.headerContent}>
+          <View style={styles.headerInfo}>
+            <Text style={baseStyles.headerTitle}>Social</Text>
+            <Text style={baseStyles.headerSubtitle}>Conecta con otros lectores</Text>
           </View>
+          {user ? (
+            <TouchableOpacity 
+              style={styles.userAvatar}
+              onPress={() => {
+                navigation?.navigate?.('Profile');
+              }}
+              activeOpacity={0.7}
+            >
+              <Image 
+                source={{ 
+                  uri: user.avatar || 'https://i.pravatar.cc/150?u=default',
+                  cache: 'reload' // Force reload to avoid cache issues
+                }} 
+                style={styles.avatarImage} 
+              />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.userAvatar}>
+              <Image 
+                source={{ uri: 'https://i.pravatar.cc/150?u=default' }} 
+                style={styles.avatarImage}
+              />
+            </View>
+          )}
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Historias</Text>
-            <View style={styles.activityActions}>
-              <TouchableOpacity 
-                style={styles.createTestUsersButton}
-                onPress={async () => {
-                  try {
-                    await seedStories();
-                    Alert.alert('Éxito', 'Historias de prueba creadas');
-                     // Refresh stories
-                     const storiesRes = await getStories(token);
-                     const backendStories = (storiesRes.data || []).map(story => ({
-                       id: story.id,
-                       name: story.user?.name || 'Usuario',
-                       avatar: story.user?.avatar || `https://i.pravatar.cc/150?u=${story.userId}`,
-                       slides: [{
-                         id: story.id,
-                         uri: story.imageUrl || story.bookCover || FALLBACK_COVER,
-                         caption: story.content || story.bookTitle || 'Mi historia'
-                       }]
-                     }));
-                     setStories(backendStories);
-                  } catch (error) {
-                    console.error('Error seeding stories:', error);
-                    Alert.alert('Error', 'No se pudieron crear las historias de prueba');
-                  }
-                }}
-              >
-                <MaterialIcons name="auto-fix-high" size={14} color="#5A4FFF" />
-                <Text style={styles.createTestUsersText}>Crear historias</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => setComposeStoryVisible(true)}
-              >
-                <MaterialIcons name="add" size={16} color="#5A4FFF" />
-                <Text style={styles.sectionLink}>Nueva historia</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={[baseStyles.card, { marginTop: 16 }]}>
+          <View style={baseStyles.rowBetween}>
+            <Text style={baseStyles.sectionTitle}>Historias</Text>
           </View>
           <FlatList
             data={stories}
@@ -1069,16 +1145,16 @@ const submitCreateClub = useCallback(
           />
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Actividad</Text>
+        <View style={[baseStyles.card, { marginTop: 24 }]}>
+          <View style={[baseStyles.rowBetween, { marginBottom: 16 }]}>
+            <Text style={baseStyles.sectionTitle}>Actividad</Text>
             <View style={styles.activityActions}>
-              {loading && <ActivityIndicator size="small" color="#5A4FFF" />}
+              {loading && <ActivityIndicator size="small" color={COLORS.ACCENT} />}
               <TouchableOpacity 
                 style={styles.addActivityButton}
                 onPress={() => setCreatePostModalVisible(true)}
               >
-                <MaterialIcons name="add" size={16} color="#5A4FFF" />
+                <MaterialIcons name="add" size={16} color={COLORS.ACCENT} />
                 <Text style={styles.addActivityText}>Crear Post</Text>
               </TouchableOpacity>
             </View>
@@ -1098,20 +1174,33 @@ const submitCreateClub = useCallback(
               </Text>
             </View>
           ) : (
-            visibleFeed.map((p, index) => (
-              <PostCard
-                key={`${p.id}_${forceUpdate}` || `post_${index}_${forceUpdate}`}
-                post={p}
-                onLike={() => onLike(p.id)}
-                onOpenComments={() => setCommentsFor(p)}
-                onUnfollow={() => onToggleFollow(p.user.id)}
-              />
-            ))
+            visibleFeed.map((p, index) => {
+              console.log('🔍 SocialScreen - Rendering PostCard:', {
+                postId: p.id,
+                postUserId: p.user.id,
+                currentUserId: userId,
+                currentUserIdType: typeof userId,
+                postUserIdType: typeof p.user.id
+              });
+              
+              return (
+                <PostCard
+                  key={`${p.id}_${forceUpdate}` || `post_${index}_${forceUpdate}`}
+                  post={p}
+                  onLike={() => onLike(p.id)}
+                  onOpenComments={() => setCommentsFor(p)}
+                  onUnfollow={() => onToggleFollow(p.user.id)}
+                  onBookPress={handleBookPress}
+                  onDelete={handleDeletePost}
+                  currentUserId={userId}
+                />
+              );
+            })
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Personas que quizá conozcas</Text>
+        <View style={baseStyles.card}>
+          <Text style={baseStyles.sectionTitle}>Personas que quizá conozcas</Text>
           
           <FlatList
             data={filteredSuggestions}
@@ -1130,9 +1219,9 @@ const submitCreateClub = useCallback(
           />
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Clubs de lectura</Text>
+        <View style={baseStyles.card}>
+          <View style={baseStyles.rowBetween}>
+            <Text style={baseStyles.sectionTitle}>Clubs de lectura</Text>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => setCreateClubVisible(true)}

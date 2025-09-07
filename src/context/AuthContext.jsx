@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
-import { getUserProfile } from '../api/api';
+import { getUserProfile, register as apiRegister } from '../api/api';
 
 export const AuthContext = createContext();
 
@@ -88,8 +88,27 @@ export const AuthProvider = ({ children }) => {
       await setItem('token', newToken);
       setToken(newToken);
       await loadUserData(newToken);
+      console.log('✅ AuthContext: Login completed successfully');
     } catch (e) {
       console.error('Error guardando token', e);
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      console.log('🔍 AuthContext: Register called with data:', {
+        hasName: !!userData.name,
+        hasUsername: !!userData.username,
+        hasEmail: !!userData.email,
+        hasPassword: !!userData.password
+      });
+      
+      const response = await apiRegister(userData);
+      console.log('✅ AuthContext: Registration successful');
+      return response;
+    } catch (e) {
+      console.error('❌ AuthContext: Registration failed:', e);
+      throw e;
     }
   };
 
@@ -98,8 +117,20 @@ export const AuthProvider = ({ children }) => {
       await deleteItem('token');
       setToken(null);
       setUser(null);
+      console.log('✅ User logged out successfully');
     } catch (e) {
       console.error('Error eliminando token', e);
+    }
+  };
+
+  const clearExpiredToken = async () => {
+    try {
+      await deleteItem('token');
+      setToken(null);
+      setUser(null);
+      console.log('✅ Expired token cleared');
+    } catch (e) {
+      console.error('Error clearing expired token', e);
     }
   };
 
@@ -109,14 +140,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   return (
     <AuthContext.Provider value={{ 
       token, 
       user, 
       login, 
+      register,
       logout, 
       loading, 
-      refreshUserData 
+      refreshUserData,
+      clearExpiredToken
     }}>
       {children}
     </AuthContext.Provider>

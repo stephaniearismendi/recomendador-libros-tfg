@@ -1,33 +1,28 @@
 import { StyleSheet } from 'react-native';
-
-// Paleta de colores consistente con el resto de la app
-const ACCENT = '#5A4FFF';
-const BG = '#F7F6F3';
-const CARD = '#FFFFFF';
-const TEXT = '#1F2328';
-const SUBT = '#6B7280';
-const BORDER = '#EAE7E1';
-const SHADOW = 'rgba(0,0,0,0.06)';
+import { COLORS, TYPOGRAPHY } from './baseStyles';
 
 const exploreStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: COLORS.BG,
   },
   scroll: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 40,
   },
   header: {
     marginBottom: 24,
-    backgroundColor: CARD,
+    backgroundColor: COLORS.CARD,
     borderRadius: 20,
     padding: 20,
-    shadowColor: SHADOW,
+    shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
-    elevation: 2,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
   },
   headerContent: {
     marginBottom: 16,
@@ -37,42 +32,38 @@ const exploreStyles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: BORDER,
+    borderTopColor: COLORS.BORDER,
   },
   statItem: {
     alignItems: 'center',
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: '700',
-    color: ACCENT,
     fontFamily: 'Poppins-Bold',
+    color: COLORS.ACCENT,
   },
   statLabel: {
-    fontSize: 12,
-    color: SUBT,
-    fontFamily: 'Poppins-Regular',
+    ...TYPOGRAPHY.small,
     marginTop: 4,
   },
   heading: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: TEXT,
-    fontFamily: 'Poppins-Bold',
+    fontSize: 24,
+    fontWeight: '600',
+    color: COLORS.TEXT,
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: 2,
   },
   subheading: {
-    fontSize: 15,
-    color: SUBT,
+    ...TYPOGRAPHY.caption,
     marginTop: 8,
-    fontFamily: 'Poppins-Regular',
     lineHeight: 20,
   },
   filterSection: {
-    backgroundColor: CARD,
+    backgroundColor: COLORS.CARD,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: SHADOW,
+    shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -87,7 +78,7 @@ const exploreStyles = StyleSheet.create({
   filterTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: TEXT,
+    color: COLORS.TEXT,
     fontFamily: 'Poppins-SemiBold',
   },
   clearFiltersBtn: {
@@ -98,7 +89,7 @@ const exploreStyles = StyleSheet.create({
   },
   clearFiltersText: {
     fontSize: 12,
-    color: ACCENT,
+    color: COLORS.ACCENT,
     fontFamily: 'Poppins-SemiBold',
   },
   filterRow: {
@@ -107,7 +98,7 @@ const exploreStyles = StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: TEXT,
+    color: COLORS.TEXT,
     marginBottom: 8,
     fontFamily: 'Poppins-SemiBold',
   },
@@ -132,18 +123,18 @@ const exploreStyles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: TEXT,
+    color: COLORS.TEXT,
     fontFamily: 'Poppins-Bold',
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: SUBT,
+    color: COLORS.SUBT,
     fontFamily: 'Poppins-Regular',
     lineHeight: 16,
   },
   sectionBadge: {
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.ACCENT,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -173,7 +164,7 @@ const exploreStyles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: SUBT,
+    color: COLORS.SUBT,
     fontFamily: 'Poppins-Regular',
   },
   emptyContainer: {
@@ -183,7 +174,7 @@ const exploreStyles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: COLORS.BORDER,
   },
   emptyIconContainer: {
     width: 60,
@@ -196,10 +187,10 @@ const exploreStyles = StyleSheet.create({
   },
   emptyIcon: {
     fontSize: 24,
-    color: ACCENT,
+    color: COLORS.ACCENT,
   },
   emptyMessage: {
-    color: SUBT,
+    color: COLORS.SUBT,
     textAlign: 'center',
     fontSize: 14,
     fontFamily: 'Poppins-Regular',

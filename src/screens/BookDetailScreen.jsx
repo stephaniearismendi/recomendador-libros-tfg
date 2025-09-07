@@ -1,5 +1,5 @@
 // src/screens/BookDetailScreen.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,12 @@ import {
   addFavorite,
   removeFavorite,
   getFavorites,
+  getBookById,
   // ❌ getUserIdFromToken  — ya no lo usamos
 } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode'; // ✅ decodificar localmente
+import { AuthContext } from '../context/AuthContext';
 
 const FALLBACK_IMG = 'https://covers.openlibrary.org/b/id/240727-S.jpg';
 
@@ -65,30 +67,18 @@ const resolveCoverUri = (book = {}, details = {}) => {
 export default function BookDetailScreen({ route }) {
   const { book, bookKey } = route.params;
   const navigation = useNavigation();
+  const { token, user } = useContext(AuthContext);
 
   const [details, setDetails] = useState({ description: '', rating: null, image: null });
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [token, setToken] = useState(null);
+  
+  // Usar el userId del AuthContext en lugar de estado local
+  const userId = user?.id || null;
 
   const finalRating = details.rating ?? book.rating ?? null;
   const coverUri = useMemo(() => resolveCoverUri(book, details), [book, details]);
 
-  // ✅ Saca token y userId localmente del JWT (sin /users/me)
-  useEffect(() => {
-    (async () => {
-      const t = await AsyncStorage.getItem('token');
-      if (!t) return;
-      setToken(t);
-      try {
-        const payload = jwtDecode(t);
-        setUserId(payload?.userId ?? null);
-      } catch (e) {
-        console.warn('Token inválido/ilegible', e);
-      }
-    })();
-  }, []);
 
   // Detalles del libro
   useEffect(() => {
@@ -111,6 +101,21 @@ export default function BookDetailScreen({ route }) {
           return;
         }
 
+        // Primero intentar obtener desde la base de datos
+        try {
+          console.log('📚 Intentando obtener libro desde base de datos:', key);
+          const dbResponse = await getBookById(key);
+          if (dbResponse.data) {
+            console.log('✅ Libro encontrado en base de datos:', dbResponse.data);
+            setDetails(dbResponse.data);
+            setLoading(false);
+            return;
+          }
+        } catch (dbError) {
+          console.log('⚠️ Libro no encontrado en base de datos, intentando API externa');
+        }
+
+        // Si no está en la base de datos, usar API externa
         const response = await getBookDetails(key);
         setDetails(response.data || {});
       } catch (error) {
@@ -140,9 +145,21 @@ export default function BookDetailScreen({ route }) {
 
   const handleToggleFavorite = async () => {
     if (!userId || !token) {
-      Alert.alert('Inicia sesión', 'No hemos podido validar tu sesión.');
+      Alert.alert(
+        'Sesión Requerida', 
+        'No se pudo validar tu sesión. Por favor, inicia sesión nuevamente para gestionar tus favoritos.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('User acknowledged session issue');
+            }
+          }
+        ]
+      );
       return;
     }
+    
     try {
       if (isFavorite) {
         await removeFavorite(userId, book.id, token);
@@ -150,7 +167,7 @@ export default function BookDetailScreen({ route }) {
       } else {
         await addFavorite(
           userId,
-          { ...book, image: coverUri, imageUrl: coverUri }, // enviamos portada resuelta
+          { ...book, image: coverUri, imageUrl: coverUri },
           token,
         );
         setIsFavorite(true);

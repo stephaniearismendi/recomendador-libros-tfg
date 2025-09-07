@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useContext } from 'react';
 import {
   View,
   ScrollView,
@@ -16,6 +16,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import CurrentlyReadingCard from '../components/CurrentlyReadingCard';
 import StatsRow from '../components/StatsRow';
@@ -23,6 +24,7 @@ import BookCarousel from '../components/BookCarousel';
 import ReadingChallenge from '../components/ReadingChallenge';
 import BookCard from '../components/BookCard';
 import styles from '../styles/libraryStyles';
+import { baseStyles, COLORS, TYPOGRAPHY } from '../styles/baseStyles';
 import {
   getFavorites,
   getPopularBooks,
@@ -40,10 +42,11 @@ const CHALLENGE_KEY = 'reading_challenge_goal';
 
 export default function LibraryScreen() {
   const navigation = useNavigation();
+  const { token, user } = useContext(AuthContext);
   const year = new Date().getFullYear();
 
-  const [token, setToken] = useState(null);
-  const [userId, setUserId] = useState(null);
+  // Usar el userId del AuthContext en lugar de estado local
+  const userId = user?.id || null;
   const [favorites, setFavorites] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [reading, setReading] = useState(null);
@@ -62,17 +65,6 @@ export default function LibraryScreen() {
   const [challengeGoal, setChallengeGoal] = useState(null);
   const [tempGoal, setTempGoal] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      const t = await AsyncStorage.getItem('token');
-      if (!t) return;
-      setToken(t);
-      try {
-        const decoded = jwtDecode(t);
-        setUserId(decoded?.userId || null);
-      } catch {}
-    })();
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -106,11 +98,17 @@ export default function LibraryScreen() {
             if (userId && token) {
               const recRes = await getPersonalRecommendations({ userId }, token);
               recs = recRes?.data || [];
+              
+              // Si no hay recomendaciones personales, usar libros populares como fallback
+              if (recs.length === 0) {
+                const popRes = await getPopularBooks();
+                recs = popRes?.data || [];
+              }
             } else {
               const popRes = await getPopularBooks();
               recs = popRes?.data || [];
             }
-          } catch {
+          } catch (error) {
             const popRes = await getPopularBooks();
             recs = popRes?.data || [];
           }
@@ -142,9 +140,21 @@ export default function LibraryScreen() {
   const toggleFavorite = useCallback(async (book) => {
     try {
       if (!userId || !token) {
-        Alert.alert('Sesión requerida', 'Inicia sesión para gestionar favoritos.');
+        Alert.alert(
+          'Sesión Requerida', 
+          'Tu sesión ha expirado o se ha limpiado. Por favor, inicia sesión nuevamente para gestionar tus favoritos.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('User acknowledged session expired');
+              }
+            }
+          ]
+        );
         return;
       }
+      
       if (favorites.some(fav => fav.id === book.id)) {
         await removeFavorite(userId, book.id, token);
         if (reading && reading.id === book.id) {
@@ -286,6 +296,7 @@ export default function LibraryScreen() {
     navigation?.navigate?.('BookDetail', { bookKey: key, book });
   }, [navigation]);
 
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -303,11 +314,17 @@ export default function LibraryScreen() {
         if (userId && token) {
           const recRes = await getPersonalRecommendations({ userId }, token);
           recs = recRes?.data || [];
+          
+          // Si no hay recomendaciones personales, usar libros populares como fallback
+          if (recs.length === 0) {
+            const popRes = await getPopularBooks();
+            recs = popRes?.data || [];
+          }
         } else {
           const popRes = await getPopularBooks();
           recs = popRes?.data || [];
         }
-      } catch {
+      } catch (error) {
         const popRes = await getPopularBooks();
         recs = popRes?.data || [];
       }
@@ -327,18 +344,18 @@ export default function LibraryScreen() {
   }, [userId, token, reading]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={baseStyles.container}>
       <View style={styles.backgroundDecoration} />
       <ScrollView 
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={baseStyles.scroll}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#5A4FFF']} // Android
-            tintColor="#5A4FFF" // iOS
+            colors={[COLORS.ACCENT]} // Android
+            tintColor={COLORS.ACCENT} // iOS
             title="Actualizando..." // iOS
-            titleColor="#5A4FFF" // iOS
+            titleColor={COLORS.ACCENT} // iOS
           />
         }
       >

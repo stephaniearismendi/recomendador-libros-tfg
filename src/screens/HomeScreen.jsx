@@ -3,6 +3,7 @@ import { View, Text, ScrollView, SafeAreaView, ActivityIndicator, FlatList, Refr
 import AdvancedFilters from '../components/AdvancedFilters';
 import BookCard from '../components/BookCard';
 import styles from '../styles/exploreStyles';
+import { baseStyles, COLORS, TYPOGRAPHY } from '../styles/baseStyles';
 import { getPopularBooks, getAdaptedBooks, getNewYorkTimesBooks } from '../api/api';
 import { categorizeBook } from '../utils/bookCategorizer';
 
@@ -277,22 +278,22 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={baseStyles.container}>
       <ScrollView 
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={baseStyles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#5A4FFF']}
-            tintColor="#5A4FFF"
+            colors={[COLORS.ACCENT]}
+            tintColor={COLORS.ACCENT}
             title="Actualizando..."
-            titleColor="#5A4FFF"
+            titleColor={COLORS.ACCENT}
           />
         }
       >
-        <View style={styles.header}>
+        <View style={baseStyles.card}>
           <View style={styles.headerContent}>
             <Text style={styles.heading}>Explora lecturas</Text>
             <Text style={styles.subheading}>Descubre tu próxima lectura favorita</Text>

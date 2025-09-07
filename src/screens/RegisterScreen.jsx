@@ -1,56 +1,96 @@
 import React, { useState, useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Platform, 
-  ActivityIndicator,
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
+  Platform,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { login as apiLogin } from '../api/api';
-import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { AuthContext } from '../context/AuthContext';
 
-export default function LoginScreen({ navigation }) {
-  const { login } = useContext(AuthContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+export default function RegisterScreen({ navigation }) {
+  const { register } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setErrorMessage('Por favor, completa todos los campos.');
-      return;
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      Alert.alert('Error', 'El nombre es requerido');
+      return false;
     }
-    
+    if (!formData.username.trim()) {
+      Alert.alert('Error', 'El nombre de usuario es requerido');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      Alert.alert('Error', 'El email es requerido');
+      return false;
+    }
+    if (!formData.email.includes('@')) {
+      Alert.alert('Error', 'Ingresa un email válido');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return false;
+    }
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+
     setLoading(true);
-    setErrorMessage('');
-    
     try {
-      console.log('🔍 LoginScreen - Attempting login with:', { email, password: '***' });
-      const response = await apiLogin({ email, password });
-      console.log('✅ LoginScreen - Login successful:', { hasToken: !!response.data.token });
-      await login(response.data.token);
-    } catch (err) {
-      console.error('❌ LoginScreen - Login failed:', {
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        message: err.message
+      await register({
+        name: formData.name.trim(),
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
       });
       
-      if (err.response?.status === 401) {
-        setErrorMessage('Credenciales incorrectas. Verifica tu email y contraseña.');
-      } else if (err.response?.status === 500) {
-        setErrorMessage('Error del servidor. Inténtalo más tarde.');
+      Alert.alert(
+        '¡Registro exitoso!',
+        'Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión.',
+        [
+          {
+            text: 'Iniciar sesión',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      if (error?.response?.status === 409) {
+        Alert.alert('Error', 'El email o nombre de usuario ya está en uso');
+      } else if (error?.response?.status === 400) {
+        Alert.alert('Error', 'Datos inválidos. Verifica la información ingresada');
       } else {
-        setErrorMessage('Error de conexión. Verifica tu conexión a internet.');
+        Alert.alert('Error', 'No se pudo crear la cuenta. Inténtalo de nuevo.');
       }
     } finally {
       setLoading(false);
@@ -78,6 +118,13 @@ export default function LoginScreen({ navigation }) {
           >
             {/* Header */}
             <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              
               <View style={styles.logoContainer}>
                 <View style={styles.logoBackground}>
                   <MaterialIcons name="auto-stories" size={40} color="#5A4FFF" />
@@ -86,15 +133,51 @@ export default function LoginScreen({ navigation }) {
                 <View style={styles.logoAccent} />
               </View>
               
-              <Text style={styles.title}>Bienvenido de nuevo</Text>
+              <Text style={styles.title}>Crear cuenta</Text>
               <Text style={styles.subtitle}>
-                Inicia sesión para continuar tu aventura literaria
+                Únete a nuestra comunidad de lectores
               </Text>
             </View>
 
             {/* Glass Form Container */}
             <View style={styles.glassContainer}>
               <View style={styles.formContainer}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Nombre completo</Text>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIconContainer}>
+                      <MaterialIcons name="person" size={18} color="#5A4FFF" />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.name}
+                      onChangeText={(value) => handleInputChange('name', value)}
+                      placeholder="Tu nombre completo"
+                      placeholderTextColor="rgba(107, 114, 128, 0.6)"
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Nombre de usuario</Text>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIconContainer}>
+                      <MaterialIcons name="alternate-email" size={18} color="#5A4FFF" />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.username}
+                      onChangeText={(value) => handleInputChange('username', value)}
+                      placeholder="tu_usuario"
+                      placeholderTextColor="rgba(107, 114, 128, 0.6)"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                </View>
+
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Email</Text>
                   <View style={styles.inputContainer}>
@@ -103,13 +186,13 @@ export default function LoginScreen({ navigation }) {
                     </View>
                     <TextInput
                       style={styles.input}
+                      value={formData.email}
+                      onChangeText={(value) => handleInputChange('email', value)}
                       placeholder="tu@email.com"
                       placeholderTextColor="rgba(107, 114, 128, 0.6)"
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      value={email}
-                      onChangeText={setEmail}
                     />
                   </View>
                 </View>
@@ -122,13 +205,13 @@ export default function LoginScreen({ navigation }) {
                     </View>
                     <TextInput
                       style={styles.input}
-                      placeholder="Tu contraseña"
+                      value={formData.password}
+                      onChangeText={(value) => handleInputChange('password', value)}
+                      placeholder="Mínimo 6 caracteres"
                       placeholderTextColor="rgba(107, 114, 128, 0.6)"
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
-                      value={password}
-                      onChangeText={setPassword}
                     />
                     <TouchableOpacity
                       style={styles.eyeButton}
@@ -143,16 +226,38 @@ export default function LoginScreen({ navigation }) {
                   </View>
                 </View>
 
-                {errorMessage !== '' && (
-                  <View style={styles.errorContainer}>
-                    <MaterialIcons name="error-outline" size={16} color="#E63946" />
-                    <Text style={styles.errorText}>{errorMessage}</Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Confirmar contraseña</Text>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIconContainer}>
+                      <MaterialIcons name="lock" size={18} color="#5A4FFF" />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.confirmPassword}
+                      onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                      placeholder="Repite tu contraseña"
+                      placeholderTextColor="rgba(107, 114, 128, 0.6)"
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <MaterialIcons
+                        name={showConfirmPassword ? 'visibility' : 'visibility-off'}
+                        size={18}
+                        color="#5A4FFF"
+                      />
+                    </TouchableOpacity>
                   </View>
-                )}
+                </View>
 
                 <TouchableOpacity
-                  style={[styles.loginButton, loading && styles.buttonDisabled]}
-                  onPress={handleLogin}
+                  style={[styles.registerButton, loading && styles.buttonDisabled]}
+                  onPress={handleRegister}
                   disabled={loading}
                 >
                   <View style={styles.buttonGradient}>
@@ -160,7 +265,7 @@ export default function LoginScreen({ navigation }) {
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <>
-                        <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+                        <Text style={styles.registerButtonText}>Crear cuenta</Text>
                         <MaterialIcons name="arrow-forward" size={18} color="#fff" />
                       </>
                     )}
@@ -172,12 +277,12 @@ export default function LoginScreen({ navigation }) {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                ¿No tienes una cuenta?{' '}
+                ¿Ya tienes una cuenta?{' '}
                 <Text
                   style={styles.linkText}
-                  onPress={() => navigation.navigate('Register')}
+                  onPress={() => navigation.navigate('Login')}
                 >
-                  Regístrate aquí
+                  Iniciar sesión
                 </Text>
               </Text>
             </View>
@@ -203,33 +308,33 @@ const styles = StyleSheet.create({
   },
   floatingElement1: {
     position: 'absolute',
-    top: 100,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(90, 79, 255, 0.06)',
-    transform: [{ rotate: '45deg' }],
+    top: 80,
+    right: -60,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(90, 79, 255, 0.04)',
+    transform: [{ rotate: '30deg' }],
   },
   floatingElement2: {
     position: 'absolute',
-    bottom: 200,
-    left: -80,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(139, 92, 246, 0.04)',
-    transform: [{ rotate: '-30deg' }],
+    bottom: 150,
+    left: -100,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: 'rgba(139, 92, 246, 0.03)',
+    transform: [{ rotate: '-45deg' }],
   },
   floatingElement3: {
     position: 'absolute',
-    top: 300,
-    left: 50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(90, 79, 255, 0.03)',
-    transform: [{ rotate: '60deg' }],
+    top: 400,
+    left: 30,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(90, 79, 255, 0.02)',
+    transform: [{ rotate: '75deg' }],
   },
   safeArea: {
     flex: 1,
@@ -243,12 +348,32 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 60,
     paddingBottom: 40,
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(90, 79, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(90, 79, 255, 0.2)',
+    shadowColor: '#5A4FFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 32,
+    marginTop: 20,
     position: 'relative',
   },
   logoBackground: {
@@ -315,7 +440,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputGroup: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
@@ -359,25 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(90, 79, 255, 0.1)',
   },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(230, 57, 70, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(230, 57, 70, 0.3)',
-  },
-  errorText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#FF6B6B',
-    marginLeft: 8,
-    flex: 1,
-  },
-  loginButton: {
+  registerButton: {
     borderRadius: 16,
     marginTop: 24,
     shadowColor: '#5A4FFF',
@@ -398,7 +505,7 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
-  loginButtonText: {
+  registerButtonText: {
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
     color: '#FFFFFF',

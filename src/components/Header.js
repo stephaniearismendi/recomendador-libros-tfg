@@ -20,14 +20,10 @@ export default function Header({ greeting, user, onProfilePress }) {
           <Text style={styles.userName}>{userName}</Text>
         </View>
         <TouchableOpacity 
-          style={styles.avatarContainer} 
           onPress={onProfilePress}
           activeOpacity={0.7}
         >
           <Image source={{ uri: userAvatar }} style={styles.avatar} />
-          <View style={styles.avatarBadge}>
-            <MaterialIcons name="person" size={12} color="#fff" />
-          </View>
         </TouchableOpacity>
       </View>
     </View>
