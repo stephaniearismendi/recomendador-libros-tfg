@@ -4,7 +4,6 @@ import {
   Text, 
   TextInput, 
   TouchableOpacity, 
-  StyleSheet, 
   Platform, 
   ActivityIndicator,
   SafeAreaView,
@@ -14,6 +13,11 @@ import {
 import { login as apiLogin } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { loginStyles } from '../styles/components';
+import {
+  validateLoginForm,
+  handleLoginError,
+} from '../utils/loginUtils';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -24,8 +28,9 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setErrorMessage('Por favor, completa todos los campos.');
+    const validation = validateLoginForm(email, password);
+    if (!validation.isValid) {
+      setErrorMessage(validation.error);
       return;
     }
     
@@ -33,76 +38,56 @@ export default function LoginScreen({ navigation }) {
     setErrorMessage('');
     
     try {
-      console.log('🔍 LoginScreen - Attempting login with:', { email, password: '***' });
       const response = await apiLogin({ email, password });
-      console.log('✅ LoginScreen - Login successful:', { hasToken: !!response.data.token });
       await login(response.data.token);
     } catch (err) {
-      console.error('❌ LoginScreen - Login failed:', {
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        message: err.message
-      });
-      
-      if (err.response?.status === 401) {
-        setErrorMessage('Credenciales incorrectas. Verifica tu email y contraseña.');
-      } else if (err.response?.status === 500) {
-        setErrorMessage('Error del servidor. Inténtalo más tarde.');
-      } else {
-        setErrorMessage('Error de conexión. Verifica tu conexión a internet.');
-      }
+      setErrorMessage(handleLoginError(err));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background Gradient */}
-      <View style={styles.backgroundGradient} />
+    <View style={loginStyles.container}>
+      <View style={loginStyles.backgroundGradient} />
+      <View style={loginStyles.floatingElement1} />
+      <View style={loginStyles.floatingElement2} />
+      <View style={loginStyles.floatingElement3} />
       
-      {/* Floating Elements */}
-      <View style={styles.floatingElement1} />
-      <View style={styles.floatingElement2} />
-      <View style={styles.floatingElement3} />
-      
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={loginStyles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          style={loginStyles.keyboardView}
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={loginStyles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <View style={styles.logoBackground}>
+            <View style={loginStyles.header}>
+              <View style={loginStyles.logoContainer}>
+                <View style={loginStyles.logoBackground}>
                   <MaterialIcons name="auto-stories" size={40} color="#5A4FFF" />
                 </View>
-                <Text style={styles.logoText}>Read-It</Text>
-                <View style={styles.logoAccent} />
+                <Text style={loginStyles.logoText}>Read-It</Text>
+                <View style={loginStyles.logoAccent} />
               </View>
               
-              <Text style={styles.title}>Bienvenido de nuevo</Text>
-              <Text style={styles.subtitle}>
+              <Text style={loginStyles.title}>Bienvenido de nuevo</Text>
+              <Text style={loginStyles.subtitle}>
                 Inicia sesión para continuar tu aventura literaria
               </Text>
             </View>
 
-            {/* Glass Form Container */}
-            <View style={styles.glassContainer}>
-              <View style={styles.formContainer}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Email</Text>
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputIconContainer}>
+            <View style={loginStyles.glassContainer}>
+              <View style={loginStyles.formContainer}>
+                <View style={loginStyles.inputGroup}>
+                  <Text style={loginStyles.inputLabel}>Email</Text>
+                  <View style={loginStyles.inputContainer}>
+                    <View style={loginStyles.inputIconContainer}>
                       <MaterialIcons name="email" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
-                      style={styles.input}
+                      style={loginStyles.input}
                       placeholder="tu@email.com"
                       placeholderTextColor="rgba(107, 114, 128, 0.6)"
                       keyboardType="email-address"
@@ -114,14 +99,14 @@ export default function LoginScreen({ navigation }) {
                   </View>
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Contraseña</Text>
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputIconContainer}>
+                <View style={loginStyles.inputGroup}>
+                  <Text style={loginStyles.inputLabel}>Contraseña</Text>
+                  <View style={loginStyles.inputContainer}>
+                    <View style={loginStyles.inputIconContainer}>
                       <MaterialIcons name="lock" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
-                      style={styles.input}
+                      style={loginStyles.input}
                       placeholder="Tu contraseña"
                       placeholderTextColor="rgba(107, 114, 128, 0.6)"
                       secureTextEntry={!showPassword}
@@ -131,7 +116,7 @@ export default function LoginScreen({ navigation }) {
                       onChangeText={setPassword}
                     />
                     <TouchableOpacity
-                      style={styles.eyeButton}
+                      style={loginStyles.eyeButton}
                       onPress={() => setShowPassword(!showPassword)}
                     >
                       <MaterialIcons
@@ -144,23 +129,23 @@ export default function LoginScreen({ navigation }) {
                 </View>
 
                 {errorMessage !== '' && (
-                  <View style={styles.errorContainer}>
+                  <View style={loginStyles.errorContainer}>
                     <MaterialIcons name="error-outline" size={16} color="#E63946" />
-                    <Text style={styles.errorText}>{errorMessage}</Text>
+                    <Text style={loginStyles.errorText}>{errorMessage}</Text>
                   </View>
                 )}
 
                 <TouchableOpacity
-                  style={[styles.loginButton, loading && styles.buttonDisabled]}
+                  style={[loginStyles.loginButton, loading && loginStyles.buttonDisabled]}
                   onPress={handleLogin}
                   disabled={loading}
                 >
-                  <View style={styles.buttonGradient}>
+                  <View style={loginStyles.buttonGradient}>
                     {loading ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <>
-                        <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+                        <Text style={loginStyles.loginButtonText}>Iniciar sesión</Text>
                         <MaterialIcons name="arrow-forward" size={18} color="#fff" />
                       </>
                     )}
@@ -169,12 +154,11 @@ export default function LoginScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
+            <View style={loginStyles.footer}>
+              <Text style={loginStyles.footerText}>
                 ¿No tienes una cuenta?{' '}
                 <Text
-                  style={styles.linkText}
+                  style={loginStyles.linkText}
                   onPress={() => navigation.navigate('Register')}
                 >
                   Regístrate aquí
@@ -187,234 +171,3 @@ export default function LoginScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FF',
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#F8F9FF',
-  },
-  floatingElement1: {
-    position: 'absolute',
-    top: 100,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(90, 79, 255, 0.06)',
-    transform: [{ rotate: '45deg' }],
-  },
-  floatingElement2: {
-    position: 'absolute',
-    bottom: 200,
-    left: -80,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(139, 92, 246, 0.04)',
-    transform: [{ rotate: '-30deg' }],
-  },
-  floatingElement3: {
-    position: 'absolute',
-    top: 300,
-    left: 50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(90, 79, 255, 0.03)',
-    transform: [{ rotate: '60deg' }],
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-    position: 'relative',
-  },
-  logoBackground: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(90, 79, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(90, 79, 255, 0.2)',
-    shadowColor: '#5A4FFF',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 32,
-    fontFamily: 'Poppins-Bold',
-    color: '#5A4FFF',
-    marginBottom: 8,
-  },
-  logoAccent: {
-    width: 60,
-    height: 4,
-    backgroundColor: '#5A4FFF',
-    borderRadius: 2,
-    shadowColor: '#5A4FFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: 'Poppins-Bold',
-    color: '#1F2937',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
-  },
-  glassContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(90, 79, 255, 0.1)',
-    padding: 24,
-    marginBottom: 32,
-    shadowColor: '#5A4FFF',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.1,
-    shadowRadius: 40,
-    elevation: 20,
-  },
-  formContainer: {
-    flex: 1,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#374151',
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(90, 79, 255, 0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    shadowColor: '#5A4FFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  inputIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(90, 79, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#1F2937',
-  },
-  eyeButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(90, 79, 255, 0.1)',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(230, 57, 70, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(230, 57, 70, 0.3)',
-  },
-  errorText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#FF6B6B',
-    marginLeft: 8,
-    flex: 1,
-  },
-  loginButton: {
-    borderRadius: 16,
-    marginTop: 24,
-    shadowColor: '#5A4FFF',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  buttonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#5A4FFF',
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#FFFFFF',
-    marginRight: 8,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  footerText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
-  linkText: {
-    color: '#5A4FFF',
-    fontFamily: 'Poppins-SemiBold',
-  },
-});

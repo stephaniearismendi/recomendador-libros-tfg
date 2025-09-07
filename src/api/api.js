@@ -209,6 +209,12 @@ export const getStories = (token) => {
   return axios.get(url, authHeaders(token));
 };
 
+export const getUserStories = (userId) => {
+  const userIdStr = String(userId);
+  const url = `${API_URL}/social/stories/user/${userIdStr}`;
+  return axios.get(url);
+};
+
 export const cleanExpiredStories = (token) => {
   const url = `${API_URL}/social/stories/clean`;
   return axios.post(url, {}, authHeaders(token));
@@ -272,6 +278,5 @@ export const getBookById = (bookId) =>
 
 export const deletePost = (postId, token) => {
   const url = `${API_URL}/social/posts/${postId}`;
-  console.log('🗑️ API deletePost called:', { url, postId, hasToken: !!token });
   return axios.delete(url, authHeaders(token));
 };

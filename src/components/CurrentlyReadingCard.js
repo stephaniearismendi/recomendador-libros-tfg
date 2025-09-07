@@ -1,100 +1,53 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-
-const FALLBACK_IMG = 'https://covers.openlibrary.org/b/id/240727-S.jpg';
+import { View, Text, Image } from 'react-native';
+import { currentlyReadingStyles } from '../styles/components/CurrentlyReadingCardStyles';
+import { formatBookData, getProgressPercentage, hasValidBook } from '../utils/readingUtils';
 
 export default function CurrentlyReadingCard({ title, author, coverUri, progress = 0 }) {
-  if (!title) {
+  const bookData = formatBookData({ title, author, cover: coverUri });
+  
+  if (!hasValidBook(bookData)) {
     return (
-      <View style={styles.cardEmpty}>
-        <Text style={styles.emptyTitle}>No hay ningún libro en lectura</Text>
-        <Text style={styles.emptySubtitle}>Elige uno de tus favoritos para empezar.</Text>
+      <View style={currentlyReadingStyles.cardEmpty}>
+        <Text style={currentlyReadingStyles.emptyTitle}>No hay ningún libro en lectura</Text>
+        <Text style={currentlyReadingStyles.emptySubtitle}>Elige uno de tus favoritos para empezar.</Text>
       </View>
     );
   }
 
-  const pct = Math.max(0, Math.min(100, progress || 0));
+  const progressPercentage = getProgressPercentage(progress);
 
   return (
-    <View style={styles.card}>
-      <Image source={{ uri: coverUri || FALLBACK_IMG }} style={styles.cover} resizeMode="cover" />
-      <View style={styles.meta}>
-        <Text style={styles.title} numberOfLines={2}>{title}</Text>
-        {!!author && <Text style={styles.author} numberOfLines={1}>{author}</Text>}
+    <View style={currentlyReadingStyles.card}>
+      <Image 
+        source={{ uri: bookData.cover }} 
+        style={currentlyReadingStyles.cover} 
+        resizeMode="cover" 
+      />
+      <View style={currentlyReadingStyles.meta}>
+        <Text style={currentlyReadingStyles.title} numberOfLines={2}>
+          {bookData.title}
+        </Text>
+        {bookData.author && (
+          <Text style={currentlyReadingStyles.author} numberOfLines={1}>
+            {bookData.author}
+          </Text>
+        )}
 
-        <View style={styles.progressWrap}>
-          <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${pct}%` }]} />
+        <View style={currentlyReadingStyles.progressWrap}>
+          <View style={currentlyReadingStyles.progressBg}>
+            <View 
+              style={[
+                currentlyReadingStyles.progressFill, 
+                { width: `${progressPercentage}%` }
+              ]} 
+            />
           </View>
-          <Text style={styles.progressText}>{pct}%</Text>
+          <Text style={currentlyReadingStyles.progressText}>
+            {progressPercentage}%
+          </Text>
         </View>
       </View>
     </View>
   );
 }
-
-const RADIUS = 16;
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS,
-    padding: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-  },
-  cardEmpty: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  cover: {
-    width: 72,
-    height: 108,
-    borderRadius: 10,
-    backgroundColor: '#EEE',
-  },
-  meta: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  author: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 6,
-  },
-  progressWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
-  },
-  progressBg: {
-    flex: 1,
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 8,
-    backgroundColor: '#5A4FFF',
-    borderRadius: 24,
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#4F46E5',
-    width: 38,
-    textAlign: 'right',
-  },
-});

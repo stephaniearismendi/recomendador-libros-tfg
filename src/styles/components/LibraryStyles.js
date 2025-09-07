@@ -1,11 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, TYPOGRAPHY } from './baseStyles';
+import { COLORS } from '../baseStyles';
 
-export default StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BG,
-  },
+export const libraryStyles = StyleSheet.create({
   backgroundDecoration: {
     position: 'absolute',
     top: 0,
@@ -17,90 +13,6 @@ export default StyleSheet.create({
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 24,
-    paddingVertical: 8,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  greetingContainer: {
-    flex: 1,
-  },
-  screenTitle: {
-    fontSize: 30,
-    fontFamily: 'Poppins-Bold',
-    color: '#3b5998',
-    marginBottom: 18,
-    marginLeft: 4,
-  },
-  section: {
-    marginBottom: 28,
-    backgroundColor: COLORS.CARD,
-    borderRadius: 16,
-    padding: 10,
-    shadowColor: COLORS.SHADOW,
-    shadowOpacity: 1,
-    shadowRadius: 8,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: COLORS.TEXT,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 16,
-    color: COLORS.SUBT,
-    fontFamily: 'Poppins-Regular',
-    opacity: 0.8,
-  },
-  title: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 24,
-    color: COLORS.TEXT,
-  },
-  subtitle: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 16,
-    color: COLORS.SUBT,
-    lineHeight: 22,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: COLORS.ACCENT,
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-  },
-  activeTab: {
-    fontSize: 12,
-    color: '#1F2937',
-  },
-  inactiveTab: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  currentlySection: {
-    marginBottom: 28,
-  },
-
   card: {
     marginBottom: 16,
     backgroundColor: COLORS.CARD,
@@ -114,13 +26,6 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.BORDER,
   },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-
   sectionHeader: {
     flexDirection: 'column',
     marginBottom: 20,
@@ -142,44 +47,6 @@ export default StyleSheet.create({
     lineHeight: 20,
     marginTop: 6,
   },
-
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  pillButton: {
-    backgroundColor: COLORS.ACCENT,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    alignSelf: 'flex-start',
-    shadowColor: COLORS.ACCENT,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  pillText: { 
-    color: '#fff', 
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 14,
-  },
-  pillSecondary: {
-    backgroundColor: '#F2F1FD',
-    borderWidth: 1,
-    borderColor: '#E0DDFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  pillTextSecondary: { 
-    color: COLORS.ACCENT,
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 14,
-  },
-
   chipsRow: {
     flexDirection: 'row',
     gap: 8,
@@ -220,7 +87,6 @@ export default StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     fontSize: 13,
   },
-
   emptyReading: { 
     gap: 16,
     alignItems: 'center',
@@ -244,13 +110,18 @@ export default StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     fontSize: 15,
   },
-
-  favList: { paddingVertical: 6, paddingLeft: 8, paddingRight: 8, gap: 8 },
-  subtitleSmall: {
-    fontSize: 12,
-    color: '#6B7280',
+  favList: { 
+    paddingVertical: 6, 
+    paddingLeft: 8, 
+    paddingRight: 8, 
+    gap: 8 
   },
-
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -283,7 +154,10 @@ export default StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#EEF2FF',
   },
-  modalCloseText: { color: '#5A4FFF', fontWeight: '700' },
+  modalCloseText: { 
+    color: '#5A4FFF', 
+    fontWeight: '700' 
+  },
   pickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -330,7 +204,6 @@ export default StyleSheet.create({
     opacity: 0.8,
     marginVertical: 4,
   },
-
   modalBackdropCenter: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } 
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   ActivityIndicator,
   FlatList,
@@ -18,9 +17,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getClub, getClubChapters, getChapterMessages, postChapterMessage } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
-import { jwtDecode } from 'jwt-decode';
-
-const AVATAR = (u) => `https://i.pravatar.cc/100?u=${u || 'anon'}`;
+import { clubRoomStyles } from '../styles/components';
+import { 
+  createOptimisticMessage,
+  updateMessageWithResponse,
+  removeOptimisticMessage,
+  getFirstChapter,
+  sortChapters,
+  getChapterDisplayText,
+  validateTokenAndHandleExpiry
+} from '../utils/clubRoomUtils';
+import { getUserAvatar } from '../utils/userUtils';
 
 export default function ClubRoomScreen() {
   const route = useRoute();
@@ -83,8 +90,7 @@ export default function ClubRoomScreen() {
         const chapters = Array.isArray(chaptersResponse?.data) ? chaptersResponse.data : [];
         setChapters(chapters);
 
-        const firstChapter = chapters.length ? Math.min(...chapters.map((x) => x.chapter)) : 1;
-        setCurrent(firstChapter);
+        setCurrent(getFirstChapter(chapters));
       } finally {
         if (alive) setLoading(false);
       }
@@ -102,20 +108,6 @@ export default function ClubRoomScreen() {
       try {
         const response = await getChapterMessages(clubId, current);
         if (!alive) return;
-        
-        // Debug de los mensajes del backend
-        console.log('🔍 ClubRoom: Messages from backend:', {
-          clubId: clubId,
-          chapter: current,
-          messagesCount: response?.data?.length || 0,
-          messages: response?.data?.map(m => ({
-            id: m.id,
-            userId: m.userId,
-            userName: m.userName,
-            userAvatar: m.userAvatar,
-            text: m.text?.substring(0, 30) + '...'
-          }))
-        });
         
         setMessages(response?.data || []);
         setTimeout(() => listRef.current?.scrollToEnd?.({ animated: false }), 50);
@@ -137,27 +129,11 @@ export default function ClubRoomScreen() {
     const messageText = (text || '').trim();
     if (!messageText || !token || !current) return;
     
-    try {
-      const decoded = jwtDecode(token);
-      const now = Date.now() / 1000;
-      if (decoded.exp && decoded.exp < now) {
-        await logout();
-        navigation.navigate('Login');
-        return;
-      }
-    } catch (error) {
-      await logout();
-      navigation.navigate('Login');
+    if (!(await validateTokenAndHandleExpiry(token, logout, navigation))) {
       return;
     }
     
-    const optimisticMessage = {
-      id: `tmp_${Date.now()}`,
-      userName: 'Tú',
-      userAvatar: user?.avatar || 'https://i.pravatar.cc/150?u=default', // Usar avatar real del usuario
-      text: messageText,
-      createdAt: new Date().toISOString(),
-    };
+    const optimisticMessage = createOptimisticMessage(messageText, user);
     
     setPosting(true);
     try {
@@ -170,24 +146,7 @@ export default function ClubRoomScreen() {
       }, 100);
 
       const response = await postChapterMessage(clubId, current, messageText, token);
-      
-      if (response?.data?.id) {
-        setMessages((prev) => 
-          prev.map((m) => (m.id === optimisticMessage.id ? response.data : m))
-        );
-      } else if (response?.data) {
-        setMessages((prev) => 
-          prev.map((m) => (m.id === optimisticMessage.id ? response.data : m))
-        );
-      } else {
-        setMessages((prev) => 
-          prev.map((m) => 
-            m.id === optimisticMessage.id 
-              ? { ...m, id: `sent_${Date.now()}`, status: 'sent' }
-              : m
-          )
-        );
-      }
+      setMessages((prev) => updateMessageWithResponse(prev, optimisticMessage.id, response));
     } catch (error) {
       if (error?.response?.status === 401) {
         await logout();
@@ -195,12 +154,12 @@ export default function ClubRoomScreen() {
         return;
       }
       
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+      setMessages((prev) => removeOptimisticMessage(prev, optimisticMessage.id));
       setText(messageText);
     } finally {
       setPosting(false);
     }
-  }, [text, token, current, clubId, logout, navigation]);
+  }, [text, token, current, clubId, logout, navigation, user]);
 
   const headerTitle = useMemo(() => club?.name || 'Club de lectura', [club?.name]);
   
@@ -209,45 +168,23 @@ export default function ClubRoomScreen() {
   }, [navigation, headerTitle]);
 
   const MessageRow = ({ item }) => {
-    // Usar el avatar real del usuario actual si coincide con el mensaje
     const isCurrentUser = user && item.userId === user.id;
-    const avatarToUse = isCurrentUser ? user.avatar : item.userAvatar;
-    
-    // Debug del mensaje completo
-    console.log('🔍 ClubRoom: MessageRow item:', {
-      id: item.id,
-      userId: item.userId,
-      userName: item.userName,
-      userAvatar: item.userAvatar,
-      isCurrentUser: isCurrentUser,
-      avatarToUse: avatarToUse,
-      currentUserAvatar: user?.avatar,
-      text: item.text?.substring(0, 50) + '...',
-      allKeys: Object.keys(item)
-    });
+    const avatarToUse = isCurrentUser ? getUserAvatar(user) : item.userAvatar;
     
     return (
-      <View style={styles.msgRow}>
+      <View style={clubRoomStyles.msgRow}>
         <Image 
           source={{ 
-            uri: avatarToUse || 'https://i.pravatar.cc/150?u=default',
+            uri: avatarToUse,
             cache: 'reload'
           }} 
-          style={styles.msgAvatar}
-          onLoad={() => console.log('✅ ClubRoom: Message avatar loaded:', {
-            userId: item.userId,
-            userName: item.userName,
-            avatar: avatarToUse,
-            isCurrentUser: isCurrentUser,
-            usingFallback: !avatarToUse
-          })}
-          onError={(error) => console.log('❌ ClubRoom: Message avatar failed to load:', error)}
+          style={clubRoomStyles.msgAvatar}
         />
-        <View style={styles.msgBubble}>
-          <Text style={styles.msgAuthor}>{item.userName || 'Usuario'}</Text>
-          <Text style={styles.msgText}>{item.text}</Text>
+        <View style={clubRoomStyles.msgBubble}>
+          <Text style={clubRoomStyles.msgAuthor}>{item.userName || 'Usuario'}</Text>
+          <Text style={clubRoomStyles.msgText}>{item.text}</Text>
           {!!item.createdAt && (
-            <Text style={styles.msgTime}>{new Date(item.createdAt).toLocaleString()}</Text>
+            <Text style={clubRoomStyles.msgTime}>{new Date(item.createdAt).toLocaleString()}</Text>
           )}
         </View>
       </View>
@@ -258,48 +195,44 @@ export default function ClubRoomScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={clubRoomStyles.safe}>
         <ActivityIndicator style={{ marginTop: 40 }} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={clubRoomStyles.safe}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <View style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            {!!club?.cover && <Image source={{ uri: club.cover }} style={styles.cover} />}
-            <View style={styles.headerInfo}>
-              <Text style={styles.title}>{club?.name}</Text>
-              <Text style={styles.subtitle}>{club?.members || 0} miembros</Text>
+        <View style={clubRoomStyles.headerCard}>
+          <View style={clubRoomStyles.headerContent}>
+            {!!club?.cover && <Image source={{ uri: club.cover }} style={clubRoomStyles.cover} />}
+            <View style={clubRoomStyles.headerInfo}>
+              <Text style={clubRoomStyles.title}>{club?.name}</Text>
+              <Text style={clubRoomStyles.subtitle}>{club?.members || 0} miembros</Text>
             </View>
           </View>
 
-          <View style={styles.selectorContainer}>
+          <View style={clubRoomStyles.selectorContainer}>
             <TouchableOpacity
-              style={styles.selectorBtn}
+              style={clubRoomStyles.selectorBtn}
               onPress={() => setPickerVisible(true)}
               activeOpacity={0.9}
             >
               <MaterialIcons name="menu-book" size={16} color="#fff" />
-              <Text style={styles.selectorText}>
-                {currentMeta
-                  ? `Cap. ${currentMeta.chapter}${
-                      currentMeta.title ? ` · ${currentMeta.title}` : ''
-                    }`
-                  : 'Capítulos'}
+              <Text style={clubRoomStyles.selectorText}>
+                {getChapterDisplayText(currentMeta)}
               </Text>
               <MaterialIcons name="arrow-drop-down" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={clubRoomStyles.divider} />
 
         <View style={{ flex: 1 }}>
           {loadingMsgs ? (
@@ -311,7 +244,7 @@ export default function ClubRoomScreen() {
               keyExtractor={(m) => String(m.id)}
               renderItem={({ item }) => <MessageRow item={item} />}
               contentContainerStyle={[
-                styles.msgList,
+                clubRoomStyles.msgList,
                 { paddingBottom: keyboardHeight > 0 ? 20 : 80 }
               ]}
               onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
@@ -324,10 +257,10 @@ export default function ClubRoomScreen() {
           )}
         </View>
 
-        <View style={[styles.inputRow, { marginBottom: keyboardHeight > 0 ? 10 : 16 }]}>
+        <View style={[clubRoomStyles.inputRow, { marginBottom: keyboardHeight > 0 ? 10 : 16 }]}>
           <TextInput
             ref={inputRef}
-            style={styles.input}
+            style={clubRoomStyles.input}
             value={text}
             onChangeText={setText}
             placeholder={`Mensaje para cap. ${current}`}
@@ -338,7 +271,7 @@ export default function ClubRoomScreen() {
             blurOnSubmit={false}
           />
           <TouchableOpacity
-            style={[styles.sendBtn, !text.trim() && { opacity: 0.5 }]}
+            style={[clubRoomStyles.sendBtn, !text.trim() && { opacity: 0.5 }]}
             onPress={sendMessage}
             disabled={!text.trim() || posting}
           >
@@ -353,15 +286,15 @@ export default function ClubRoomScreen() {
         animationType="fade"
         onRequestClose={() => setPickerVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.pickerCard}>
-            <Text style={styles.modalTitle}>Elegir capítulo</Text>
+        <View style={clubRoomStyles.modalBackdrop}>
+          <View style={clubRoomStyles.pickerCard}>
+            <Text style={clubRoomStyles.modalTitle}>Elegir capítulo</Text>
             <FlatList
-              data={[...chapters].sort((a, b) => a.chapter - b.chapter)}
+              data={sortChapters(chapters)}
               keyExtractor={(c) => `c_${c.chapter}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.pickerItem, item.chapter === current && styles.pickerItemActive]}
+                  style={[clubRoomStyles.pickerItem, item.chapter === current && clubRoomStyles.pickerItemActive]}
                   onPress={() => {
                     setCurrent(item.chapter);
                     setPickerVisible(false);
@@ -369,21 +302,20 @@ export default function ClubRoomScreen() {
                 >
                   <Text
                     style={[
-                      styles.pickerItemText,
-                      item.chapter === current && styles.pickerItemTextActive,
+                      clubRoomStyles.pickerItemText,
+                      item.chapter === current && clubRoomStyles.pickerItemTextActive,
                     ]}
                   >
-                    Cap. {item.chapter}
-                    {item.title ? ` · ${item.title}` : ''}
+                    {getChapterDisplayText(item)}
                   </Text>
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={styles.emptyChaptersText}>Este club no tiene capítulos.</Text>
+                <Text style={clubRoomStyles.emptyChaptersText}>Este club no tiene capítulos.</Text>
               }
             />
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setPickerVisible(false)}>
-              <Text style={styles.modalCloseText}>Cerrar</Text>
+            <TouchableOpacity style={clubRoomStyles.modalCloseBtn} onPress={() => setPickerVisible(false)}>
+              <Text style={clubRoomStyles.modalCloseText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -392,173 +324,3 @@ export default function ClubRoomScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: '#FAF8F5',
-  },
-
-  headerCard: {
-    margin: 12,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    elevation: 2,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  cover: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: 'Poppins-Bold',
-    color: '#111',
-  },
-  subtitle: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: '#727272',
-  },
-
-  selectorContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-  },
-  selectorBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#6366F1',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  selectorText: {
-    color: '#fff',
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#EEE',
-    marginHorizontal: 12,
-  },
-
-  msgList: {
-    padding: 12,
-  },
-  msgRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  msgAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-  },
-  msgBubble: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 10,
-    elevation: 1,
-  },
-  msgAuthor: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 12,
-    color: '#1f2937',
-  },
-  msgText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: '#111',
-    marginTop: 2,
-  },
-  msgTime: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 11,
-    color: '#888',
-    marginTop: 6,
-  },
-
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#FAF8F5',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  sendBtn: {
-    backgroundColor: '#5A4FFF',
-    borderRadius: 12,
-    padding: 12,
-  },
-
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerCard: {
-    width: '86%',
-    maxHeight: '70%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-  },
-  pickerItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  pickerItemActive: {
-    backgroundColor: '#EEF2FF',
-  },
-  pickerItemText: {
-    fontFamily: 'Poppins-Medium',
-    color: '#1f2937',
-  },
-  pickerItemTextActive: {
-    color: '#4338CA',
-  },
-  emptyChaptersText: {
-    color: '#666',
-    padding: 12,
-  },
-  modalCloseBtn: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#111',
-    marginTop: 8,
-  },
-  modalCloseText: {
-    color: '#fff',
-    fontFamily: 'Poppins-Medium',
-  },
-});

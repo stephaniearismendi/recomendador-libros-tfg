@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Text,
   FlatList,
-  Alert,
   Modal,
   TouchableOpacity,
   Image,
@@ -14,8 +13,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import CurrentlyReadingCard from '../components/CurrentlyReadingCard';
@@ -23,60 +20,51 @@ import StatsRow from '../components/StatsRow';
 import BookCarousel from '../components/BookCarousel';
 import ReadingChallenge from '../components/ReadingChallenge';
 import BookCard from '../components/BookCard';
-import styles from '../styles/libraryStyles';
-import { baseStyles, COLORS, TYPOGRAPHY } from '../styles/baseStyles';
+import { libraryStyles } from '../styles/components';
+import { baseStyles, COLORS } from '../styles/baseStyles';
 import {
-  getFavorites,
-  getPopularBooks,
-  addFavorite,
-  removeFavorite,
-  getPersonalRecommendations,
-} from '../api/api';
-
-const READING_KEY = 'current_reading';
-const PROGRESS_KEY = 'progress_map';
-const CHALLENGE_KEY = 'reading_challenge_goal';
-
-// Las funciones coverUriFromBook y withResolvedCover se removieron
-// porque los libros ya vienen con imagen de la base de datos
+  loadUserData,
+  saveUserData,
+  loadLibraryData,
+  toggleFavorite,
+  calculateStats,
+  calculateProgressPercentage,
+  updateProgress,
+  validateProgressInput,
+  getBookKey,
+} from '../utils/libraryUtils';
 
 export default function LibraryScreen() {
   const navigation = useNavigation();
   const { token, user } = useContext(AuthContext);
   const year = new Date().getFullYear();
-
-  // Usar el userId del AuthContext en lugar de estado local
   const userId = user?.id || null;
+
   const [favorites, setFavorites] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [reading, setReading] = useState(null);
   const [progressMap, setProgressMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pagesModalVisible, setPagesModalVisible] = useState(false);
   const [progressModalVisible, setProgressModalVisible] = useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
-
   const [tempPages, setTempPages] = useState('');
   const [tempPercent, setTempPercent] = useState('');
   const [tempPage, setTempPage] = useState('');
   const [challengeGoal, setChallengeGoal] = useState(null);
   const [tempGoal, setTempGoal] = useState('');
 
-
   useEffect(() => {
     (async () => {
       if (!userId) return;
-      const r = await AsyncStorage.getItem(`${READING_KEY}:${userId}`);
-      setReading(r ? JSON.parse(r) : null);
-      const p = await AsyncStorage.getItem(`${PROGRESS_KEY}:${userId}`);
-      setProgressMap(p ? JSON.parse(p) : {});
-      const g = await AsyncStorage.getItem(`${CHALLENGE_KEY}:${userId}:${year}`);
-      setChallengeGoal(g ? parseInt(g, 10) : null);
+      const userData = await loadUserData(userId);
+      setReading(userData.reading);
+      setProgressMap(userData.progressMap);
+      setChallengeGoal(userData.challengeGoal);
     })();
-  }, [userId, year]);
+  }, [userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,41 +72,17 @@ export default function LibraryScreen() {
       (async () => {
         setLoading(true);
         try {
-          // --- favoritos
-          let favs = [];
-          if (userId && token) {
-            const favRes = await getFavorites(userId, token);
-            favs = favRes?.data || [];
+          const libraryData = await loadLibraryData(userId, token);
+          if (isActive) {
+            setFavorites(libraryData.favorites);
+            setRecommendations(libraryData.recommendations);
           }
-          if (isActive) setFavorites(favs);
 
-          // --- recomendaciones
-          let recs = [];
-          try {
-            if (userId && token) {
-              const recRes = await getPersonalRecommendations({ userId }, token);
-              recs = recRes?.data || [];
-              
-              // Si no hay recomendaciones personales, usar libros populares como fallback
-              if (recs.length === 0) {
-                const popRes = await getPopularBooks();
-                recs = popRes?.data || [];
-              }
-            } else {
-              const popRes = await getPopularBooks();
-              recs = popRes?.data || [];
+          if (reading && libraryData.favorites.every(f => f.id !== reading.id)) {
+            if (isActive) {
+              setReading(null);
+              await saveUserData(userId, { reading: null });
             }
-          } catch (error) {
-            const popRes = await getPopularBooks();
-            recs = popRes?.data || [];
-          }
-          
-          if (isActive) setRecommendations(recs.slice(0, 6));
-
-          // si el "reading" ya no está en favoritos, límpialo
-          if (reading && favs.every(f => f.id !== reading.id)) {
-            if (isActive) setReading(null);
-            await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
           }
         } catch (error) {
           console.error('Error al cargar datos:', error);
@@ -134,63 +98,25 @@ export default function LibraryScreen() {
 
   const persistProgress = useCallback(async (next) => {
     setProgressMap(next);
-    await AsyncStorage.setItem(`${PROGRESS_KEY}:${userId}`, JSON.stringify(next));
+    await saveUserData(userId, { progressMap: next });
   }, [userId]);
 
-  const toggleFavorite = useCallback(async (book) => {
-    try {
-      if (!userId || !token) {
-        Alert.alert(
-          'Sesión Requerida', 
-          'Tu sesión ha expirado o se ha limpiado. Por favor, inicia sesión nuevamente para gestionar tus favoritos.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                console.log('User acknowledged session expired');
-              }
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (favorites.some(fav => fav.id === book.id)) {
-        await removeFavorite(userId, book.id, token);
-        if (reading && reading.id === book.id) {
-          setReading(null);
-          await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
-        }
-      } else {
-        await addFavorite(userId, book, token);
-      }
-      // refresca favoritos
-      const favRes = await getFavorites(userId, token);
-      setFavorites(favRes.data || []);  // Los libros ya vienen con imagen de la BD
-      try {
-        const recRes = await getPersonalRecommendations({ userId }, token);
-        setRecommendations((recRes?.data || []).slice(0, 6));
-      } catch {}
-    } catch (err) {
-      console.error('FAVORITE ERROR (LibraryScreen):', {
-        message: err.message,
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        config: {
-          url: err.config?.url,
-          method: err.config?.method
-        }
-      });
-      Alert.alert('Error', `No se pudo actualizar favoritos: ${err.response?.data?.error || err.message}`);
+  const handleToggleFavorite = useCallback(async (book) => {
+    const result = await toggleFavorite(book, favorites, userId, token);
+    setFavorites(result.favorites);
+    setRecommendations(result.recommendations);
+    
+    if (reading && reading.id === book.id && !result.favorites.some(f => f.id === book.id)) {
+      setReading(null);
+      await saveUserData(userId, { reading: null });
     }
   }, [favorites, reading, token, userId]);
 
   const chooseReading = useCallback(async (book) => {
     setReading(book);
-    await AsyncStorage.setItem(`${READING_KEY}:${userId}`, JSON.stringify(book));
-    const p = progressMap[book.id];
-    if (!p || !p.totalPages) {
+    await saveUserData(userId, { reading: book });
+    const progress = progressMap[book.id];
+    if (!progress || !progress.totalPages) {
       setTempPages('');
       setPagesModalVisible(true);
     }
@@ -199,14 +125,13 @@ export default function LibraryScreen() {
 
   const clearReading = useCallback(async () => {
     setReading(null);
-    await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
+    await saveUserData(userId, { reading: null });
   }, [userId]);
 
   const saveTotalPages = useCallback(async () => {
     const total = parseInt(tempPages, 10);
     if (!reading || isNaN(total) || total <= 0) return;
-    const prev = progressMap[reading.id] || { totalPages: 0, pagesRead: 0 };
-    const next = { ...progressMap, [reading.id]: { ...prev, totalPages: total } };
+    const next = updateProgress(progressMap, reading.id, { totalPages: total });
     await persistProgress(next);
     setPagesModalVisible(false);
     setTempPages('');
@@ -214,9 +139,9 @@ export default function LibraryScreen() {
 
   const openProgressModal = useCallback(() => {
     if (!reading) return;
-    const p = progressMap[reading.id];
-    const total = p?.totalPages || 0;
-    const pagesRead = p?.pagesRead || 0;
+    const progress = progressMap[reading.id];
+    const total = progress?.totalPages || 0;
+    const pagesRead = progress?.pagesRead || 0;
     const percent = total > 0 ? Math.round((pagesRead / total) * 100) : 0;
     setTempPercent(percent ? String(percent) : '');
     setTempPage(pagesRead ? String(pagesRead) : '');
@@ -227,52 +152,28 @@ export default function LibraryScreen() {
     if (!reading) return;
     const current = progressMap[reading.id] || { totalPages: 0, pagesRead: 0 };
     const total = current.totalPages || 0;
-    const hasPercent = tempPercent.trim() !== '' && !isNaN(parseInt(tempPercent, 10));
-    const hasPage = tempPage.trim() !== '' && !isNaN(parseInt(tempPage, 10));
-    if (!hasPercent && !hasPage) return;
-    let pagesRead = current.pagesRead || 0;
-    if (hasPercent) {
-      const pct = Math.max(0, Math.min(100, parseInt(tempPercent, 10)));
-      pagesRead = total > 0 ? Math.round((pct / 100) * total) : 0;
-    } else if (hasPage) {
-      const val = Math.max(0, parseInt(tempPage, 10));
-      pagesRead = total > 0 ? Math.min(val, total) : val;
-    }
-    const next = { ...progressMap, [reading.id]: { totalPages: total, pagesRead } };
+    const pagesRead = validateProgressInput(tempPercent, tempPage, total);
+    if (pagesRead === null) return;
+    
+    const next = updateProgress(progressMap, reading.id, { pagesRead });
     await persistProgress(next);
     setProgressModalVisible(false);
     setTempPercent('');
     setTempPage('');
+    
     if (total > 0 && pagesRead >= total) {
       setReading(null);
-      await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
+      await saveUserData(userId, { reading: null });
     }
   }, [reading, tempPercent, tempPage, progressMap, persistProgress, userId]);
 
   const readingProgressPercent = useMemo(() => {
-    if (!reading) return 0;
-    const p = progressMap[reading.id];
-    if (!p || !p.totalPages) return 0;
-    return Math.max(0, Math.min(100, Math.round((p.pagesRead / p.totalPages) * 100)));
+    return calculateProgressPercentage(reading, progressMap);
   }, [reading, progressMap]);
 
   const stats = useMemo(() => {
-    const read = favorites.filter(b => {
-      const p = progressMap[b.id];
-      return p && p.totalPages && p.pagesRead >= p.totalPages;
-    }).length;
-    const inProgress = favorites.filter(b => {
-      const p = progressMap[b.id];
-      return p && p.totalPages && p.pagesRead > 0 && p.pagesRead < p.totalPages;
-    }).length;
-    const toRead = favorites.filter(b => {
-      const p = progressMap[b.id];
-      return !p || !p.pagesRead || p.pagesRead === 0;
-    }).length;
-    return { read, inProgress, toRead };
+    return calculateStats(favorites, progressMap);
   }, [favorites, progressMap]);
-
-  const currentCover = reading?.image || null;
 
   const openChallengeModal = useCallback(() => {
     setTempGoal(challengeGoal ? String(challengeGoal) : '');
@@ -280,61 +181,32 @@ export default function LibraryScreen() {
   }, [challengeGoal]);
 
   const saveChallengeGoal = useCallback(async () => {
-    const g = parseInt(tempGoal, 10);
-    if (isNaN(g) || g <= 0) {
+    const goal = parseInt(tempGoal, 10);
+    if (isNaN(goal) || goal <= 0) {
       Alert.alert('Objetivo no válido', 'Introduce un número de libros mayor que 0.');
       return;
     }
-    setChallengeGoal(g);
-    await AsyncStorage.setItem(`${CHALLENGE_KEY}:${userId}:${year}`, String(g));
+    setChallengeGoal(goal);
+    await saveUserData(userId, { challengeGoal: goal });
     setChallengeModalVisible(false);
     setTempGoal('');
-  }, [tempGoal, userId, year]);
+  }, [tempGoal, userId]);
 
   const openBookDetails = useCallback((book) => {
-    const key = book?.key || book?.id || book?.olid || book?.workId;
+    const key = getBookKey(book);
     navigation?.navigate?.('BookDetail', { bookKey: key, book });
   }, [navigation]);
-
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // --- favoritos
-      let favs = [];
-      if (userId && token) {
-        const favRes = await getFavorites(userId, token);
-        favs = favRes?.data || [];
-      }
-      setFavorites(favs);
+      const libraryData = await loadLibraryData(userId, token);
+      setFavorites(libraryData.favorites);
+      setRecommendations(libraryData.recommendations);
 
-      // --- recomendaciones
-      let recs = [];
-      try {
-        if (userId && token) {
-          const recRes = await getPersonalRecommendations({ userId }, token);
-          recs = recRes?.data || [];
-          
-          // Si no hay recomendaciones personales, usar libros populares como fallback
-          if (recs.length === 0) {
-            const popRes = await getPopularBooks();
-            recs = popRes?.data || [];
-          }
-        } else {
-          const popRes = await getPopularBooks();
-          recs = popRes?.data || [];
-        }
-      } catch (error) {
-        const popRes = await getPopularBooks();
-        recs = popRes?.data || [];
-      }
-      
-      setRecommendations(recs.slice(0, 6));
-
-      // si el "reading" ya no está en favoritos, límpialo
-      if (reading && favs.every(f => f.id !== reading.id)) {
+      if (reading && libraryData.favorites.every(f => f.id !== reading.id)) {
         setReading(null);
-        await AsyncStorage.removeItem(`${READING_KEY}:${userId}`);
+        await saveUserData(userId, { reading: null });
       }
     } catch (error) {
       console.error('Error al refrescar:', error);
@@ -345,57 +217,57 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={baseStyles.container}>
-      <View style={styles.backgroundDecoration} />
+      <View style={libraryStyles.backgroundDecoration} />
       <ScrollView 
         contentContainerStyle={baseStyles.scroll}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.ACCENT]} // Android
-            tintColor={COLORS.ACCENT} // iOS
-            title="Actualizando..." // iOS
-            titleColor={COLORS.ACCENT} // iOS
+            colors={[COLORS.ACCENT]}
+            tintColor={COLORS.ACCENT}
+            title="Actualizando..."
+            titleColor={COLORS.ACCENT}
           />
         }
       >
         <Header 
           greeting="Mi Biblioteca" 
-          user={null} // Se obtendrá del AuthContext
+          user={null}
           onProfilePress={() => navigation?.navigate?.('Profile')}
         />
 
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.titleWrap}>
-              <Text style={styles.sectionTitle}>Actualmente leyendo</Text>
+        <View style={libraryStyles.card}>
+          <View style={libraryStyles.sectionHeader}>
+            <View style={libraryStyles.titleWrap}>
+              <Text style={libraryStyles.sectionTitle}>Actualmente leyendo</Text>
               {reading ? (
-                <Text style={styles.sectionSubtitle}>
+                <Text style={libraryStyles.sectionSubtitle}>
                   {(() => {
-                    const p = progressMap[reading.id];
-                    if (p?.totalPages) {
+                    const progress = progressMap[reading.id];
+                    if (progress?.totalPages) {
                       const pct = readingProgressPercent ?? 0;
-                      const read = p.pagesRead ?? 0;
-                      return `${pct}% · ${read}/${p.totalPages} páginas`;
+                      const read = progress.pagesRead ?? 0;
+                      return `${pct}% · ${read}/${progress.totalPages} páginas`;
                     }
                     return 'Páginas no definidas';
                   })()}
                 </Text>
               ) : (
-                <Text style={styles.sectionSubtitle}>Elige un libro para empezar</Text>
+                <Text style={libraryStyles.sectionSubtitle}>Elige un libro para empezar</Text>
               )}
             </View>
 
             {reading ? (
-              <View style={styles.chipsRow}>
-                <TouchableOpacity style={styles.chipPrimary} onPress={() => setPickerVisible(true)}>
-                  <Text style={styles.chipPrimaryText}>Cambiar</Text>
+              <View style={libraryStyles.chipsRow}>
+                <TouchableOpacity style={libraryStyles.chipPrimary} onPress={() => setPickerVisible(true)}>
+                  <Text style={libraryStyles.chipPrimaryText}>Cambiar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.chipLight} onPress={openProgressModal}>
-                  <Text style={styles.chipLightText}>Progreso</Text>
+                <TouchableOpacity style={libraryStyles.chipLight} onPress={openProgressModal}>
+                  <Text style={libraryStyles.chipLightText}>Progreso</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.chipLight} onPress={clearReading}>
-                  <Text style={styles.chipLightText}>Quitar</Text>
+                <TouchableOpacity style={libraryStyles.chipLight} onPress={clearReading}>
+                  <Text style={libraryStyles.chipLightText}>Quitar</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -405,34 +277,34 @@ export default function LibraryScreen() {
             <CurrentlyReadingCard
               title={reading.title}
               author={reading.author}
-              coverUri={currentCover}
+              coverUri={reading?.image || null}
               progress={readingProgressPercent}
             />
           ) : (
-            <View style={styles.emptyReading}>
-              <Text style={styles.subtitle}>No estás leyendo ningún libro ahora mismo.</Text>
-              <TouchableOpacity style={styles.ctaButton} onPress={() => setPickerVisible(true)}>
-                <Text style={styles.ctaButtonText}>Elegir de favoritos</Text>
+            <View style={libraryStyles.emptyReading}>
+              <Text style={libraryStyles.subtitle}>No estás leyendo ningún libro ahora mismo.</Text>
+              <TouchableOpacity style={libraryStyles.ctaButton} onPress={() => setPickerVisible(true)}>
+                <Text style={libraryStyles.ctaButtonText}>Elegir de favoritos</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
-        <View style={styles.card}>
+        <View style={libraryStyles.card}>
           <StatsRow stats={stats} />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Recomendados para ti</Text>
+        <View style={libraryStyles.card}>
+          <Text style={libraryStyles.sectionTitle}>Recomendados para ti</Text>
           {loading ? (
             <ActivityIndicator size="small" color="#5A4FFF" />
           ) : (
             <BookCarousel
               title=""
-              titleStyle={styles.title}
-              bookTitleStyle={styles.subtitle}
-              authorStyle={styles.subtitle}
-              books={recommendations || []}  // Los libros ya vienen con imagen de la BD
+              titleStyle={libraryStyles.title}
+              bookTitleStyle={libraryStyles.subtitle}
+              authorStyle={libraryStyles.subtitle}
+              books={recommendations || []}
               onSeeAll={() => navigation?.navigate?.('Explore')}
               onPressBook={openBookDetails}
               showSeeAll={(recommendations || []).length > 6}
@@ -440,12 +312,12 @@ export default function LibraryScreen() {
           )}
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Mis favoritos</Text>
+        <View style={libraryStyles.card}>
+          <View style={libraryStyles.rowBetween}>
+            <Text style={libraryStyles.sectionTitle}>Mis favoritos</Text>
           </View>
           {favorites.length === 0 ? (
-            <Text style={styles.subtitle}>No tienes libros favoritos.</Text>
+            <Text style={libraryStyles.subtitle}>No tienes libros favoritos.</Text>
           ) : (
             <FlatList
               data={favorites}
@@ -461,27 +333,27 @@ export default function LibraryScreen() {
                     <BookCard
                       {...item}
                       isFavorite
-                      onToggleFavorite={() => toggleFavorite(item)}
+                      onToggleFavorite={() => handleToggleFavorite(item)}
                     />
                   </TouchableOpacity>
                 );
               }}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.favList}
+              contentContainerStyle={libraryStyles.favList}
             />
           )}
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Reto de lectura {year}</Text>
-            <TouchableOpacity style={styles.chipLight} onPress={openChallengeModal}>
-              <Text style={styles.chipLightText}>{challengeGoal ? 'Cambiar' : 'Establecer'}</Text>
+        <View style={libraryStyles.card}>
+          <View style={libraryStyles.rowBetween}>
+            <Text style={libraryStyles.sectionTitle}>Reto de lectura {year}</Text>
+            <TouchableOpacity style={libraryStyles.chipLight} onPress={openChallengeModal}>
+              <Text style={libraryStyles.chipLightText}>{challengeGoal ? 'Cambiar' : 'Establecer'}</Text>
             </TouchableOpacity>
           </View>
           <ReadingChallenge
             title={challengeGoal ? `Reto: leer ${challengeGoal} libros en ${year}` : `Define tu objetivo de ${year}`}
-            titleStyle={styles.title}
+            titleStyle={libraryStyles.title}
             current={stats.read}
             total={challengeGoal || 1}
           />
@@ -494,33 +366,33 @@ export default function LibraryScreen() {
         animationType="slide"
         onRequestClose={() => setPickerVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Elige un libro</Text>
+        <View style={libraryStyles.modalBackdrop}>
+          <View style={libraryStyles.modalSheet}>
+            <Text style={libraryStyles.modalTitle}>Elige un libro</Text>
             {favorites.length === 0 ? (
-              <Text style={styles.subtitle}>No hay favoritos disponibles.</Text>
+              <Text style={libraryStyles.subtitle}>No hay favoritos disponibles.</Text>
             ) : (
               <FlatList
                 data={favorites}
                 keyExtractor={(item) => item.id?.toString() || item.key || item.title}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                ItemSeparatorComponent={() => <View style={libraryStyles.separator} />}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.pickerItem}
+                    style={libraryStyles.pickerItem}
                     onPress={() => chooseReading(item)}
                   >
-                    <Image source={{ uri: item.image }} style={styles.pickerCover} />
+                    <Image source={{ uri: item.image }} style={libraryStyles.pickerCover} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.pickerTitle} numberOfLines={1}>{item.title}</Text>
-                      <Text style={styles.pickerAuthor} numberOfLines={1}>{item.author || 'Desconocido'}</Text>
+                      <Text style={libraryStyles.pickerTitle} numberOfLines={1}>{item.title}</Text>
+                      <Text style={libraryStyles.pickerAuthor} numberOfLines={1}>{item.author || 'Desconocido'}</Text>
                     </View>
-                    <Text style={styles.pickerAction}>Seleccionar</Text>
+                    <Text style={libraryStyles.pickerAction}>Seleccionar</Text>
                   </TouchableOpacity>
                 )}
               />
             )}
-            <TouchableOpacity style={styles.modalClose} onPress={() => setPickerVisible(false)}>
-              <Text style={styles.modalCloseText}>Cerrar</Text>
+            <TouchableOpacity style={libraryStyles.modalClose} onPress={() => setPickerVisible(false)}>
+              <Text style={libraryStyles.modalCloseText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -532,22 +404,22 @@ export default function LibraryScreen() {
         animationType="fade"
         onRequestClose={() => setPagesModalVisible(false)}
       >
-        <View style={styles.modalBackdropCenter}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Páginas totales</Text>
+        <View style={libraryStyles.modalBackdropCenter}>
+          <View style={libraryStyles.modalCard}>
+            <Text style={libraryStyles.modalTitle}>Páginas totales</Text>
             <TextInput
-              style={styles.input}
+              style={libraryStyles.input}
               value={tempPages}
               onChangeText={setTempPages}
               placeholder="Introduce el número de páginas"
               keyboardType="number-pad"
             />
-            <View style={styles.rowEnd}>
-              <TouchableOpacity style={styles.modalCloseTiny} onPress={() => setPagesModalVisible(false)}>
-                <Text style={styles.modalCloseText}>Cancelar</Text>
+            <View style={libraryStyles.rowEnd}>
+              <TouchableOpacity style={libraryStyles.modalCloseTiny} onPress={() => setPagesModalVisible(false)}>
+                <Text style={libraryStyles.modalCloseText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalPrimaryTiny} onPress={saveTotalPages}>
-                <Text style={styles.modalPrimaryText}>Guardar</Text>
+              <TouchableOpacity style={libraryStyles.modalPrimaryTiny} onPress={saveTotalPages}>
+                <Text style={libraryStyles.modalPrimaryText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -560,32 +432,32 @@ export default function LibraryScreen() {
         animationType="fade"
         onRequestClose={() => setProgressModalVisible(false)}
       >
-        <View style={styles.modalBackdropCenter}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Actualizar progreso</Text>
-            <Text style={styles.inputLabel}>Porcentaje</Text>
+        <View style={libraryStyles.modalBackdropCenter}>
+          <View style={libraryStyles.modalCard}>
+            <Text style={libraryStyles.modalTitle}>Actualizar progreso</Text>
+            <Text style={libraryStyles.inputLabel}>Porcentaje</Text>
             <TextInput
-              style={styles.input}
+              style={libraryStyles.input}
               value={tempPercent}
               onChangeText={setTempPercent}
               placeholder="0 - 100"
               keyboardType="number-pad"
             />
-            <Text style={styles.orText}>o</Text>
-            <Text style={styles.inputLabel}>Página actual</Text>
+            <Text style={libraryStyles.orText}>o</Text>
+            <Text style={libraryStyles.inputLabel}>Página actual</Text>
             <TextInput
-              style={styles.input}
+              style={libraryStyles.input}
               value={tempPage}
               onChangeText={setTempPage}
               placeholder="Número de página"
               keyboardType="number-pad"
             />
-            <View style={styles.rowEnd}>
-              <TouchableOpacity style={styles.modalCloseTiny} onPress={() => setProgressModalVisible(false)}>
-                <Text style={styles.modalCloseText}>Cerrar</Text>
+            <View style={libraryStyles.rowEnd}>
+              <TouchableOpacity style={libraryStyles.modalCloseTiny} onPress={() => setProgressModalVisible(false)}>
+                <Text style={libraryStyles.modalCloseText}>Cerrar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalPrimaryTiny} onPress={saveProgress}>
-                <Text style={styles.modalPrimaryText}>Guardar</Text>
+              <TouchableOpacity style={libraryStyles.modalPrimaryTiny} onPress={saveProgress}>
+                <Text style={libraryStyles.modalPrimaryText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -598,22 +470,22 @@ export default function LibraryScreen() {
         animationType="fade"
         onRequestClose={() => setChallengeModalVisible(false)}
       >
-        <View style={styles.modalBackdropCenter}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Objetivo de lectura {year}</Text>
+        <View style={libraryStyles.modalBackdropCenter}>
+          <View style={libraryStyles.modalCard}>
+            <Text style={libraryStyles.modalTitle}>Objetivo de lectura {year}</Text>
             <TextInput
-              style={styles.input}
+              style={libraryStyles.input}
               value={tempGoal}
               onChangeText={setTempGoal}
               placeholder="Libros a leer"
               keyboardType="number-pad"
             />
-            <View style={styles.rowEnd}>
-              <TouchableOpacity style={styles.modalCloseTiny} onPress={() => setChallengeModalVisible(false)}>
-                <Text style={styles.modalCloseText}>Cancelar</Text>
+            <View style={libraryStyles.rowEnd}>
+              <TouchableOpacity style={libraryStyles.modalCloseTiny} onPress={() => setChallengeModalVisible(false)}>
+                <Text style={libraryStyles.modalCloseText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalPrimaryTiny} onPress={saveChallengeGoal}>
-                <Text style={styles.modalPrimaryText}>Guardar</Text>
+              <TouchableOpacity style={libraryStyles.modalPrimaryTiny} onPress={saveChallengeGoal}>
+                <Text style={libraryStyles.modalPrimaryText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>

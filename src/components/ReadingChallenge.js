@@ -1,52 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { readingChallengeStyles } from '../styles/components';
+import { validateProgress } from '../utils/readingUtils';
 
-export default function ReadingChallenge({ title, current, total }) {
-  const progress = (current / total) * 100;
+export default function ReadingChallenge({ title, current = 0, total = 1 }) {
+  const safeCurrent = Math.max(0, Number(current) || 0);
+  const safeTotal = Math.max(1, Number(total) || 1);
+  const progress = validateProgress((safeCurrent / safeTotal) * 100);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.progressBar}>
-        <View style={[styles.progress, { width: `${progress}%` }]} />
+    <View style={readingChallengeStyles.container}>
+      <Text style={readingChallengeStyles.title}>{title || 'Desafío de lectura'}</Text>
+      <View style={readingChallengeStyles.progressBar}>
+        <View style={[readingChallengeStyles.progress, { width: `${progress}%` }]} />
       </View>
-      <Text style={styles.progressText}>{`${current} / ${total} libros leídos`}</Text>
+      <Text style={readingChallengeStyles.progressText}>
+        {`${safeCurrent} / ${safeTotal} libros leídos`}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: 0,
-    padding: 0,
-    marginBottom: 0,
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: 'Poppins-Bold',
-    color: '#3b5998',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  progressBar: {
-    backgroundColor: '#E5E7EB',
-    height: 14,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progress: {
-    height: 14,
-    backgroundColor: '#F59E0B',
-    borderRadius: 20,
-  },
-  progressText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-});

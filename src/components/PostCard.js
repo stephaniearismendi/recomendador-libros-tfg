@@ -1,29 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Image, TouchableOpacity, Modal, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import styles from '../styles/postCardStyles';
-import { baseStyles, COLORS, TYPOGRAPHY } from '../styles/baseStyles';
+import { postCardStyles } from '../styles/components/PostCardStyles';
+import { formatPostUser, formatPostBook, isPostOwner, formatTimeAgo, getPostStats } from '../utils/postCardUtils';
 
 export default function PostCard({ post, onLike, onOpenComments, onUnfollow, onBookPress, onDelete, currentUserId }) {
-  const user = post?.user || {};
-  const avatar = user.avatar || `https://i.pravatar.cc/100?u=${user.id || 'unknown'}`;
-  const name = user.name || 'Usuario';
   const [showMenu, setShowMenu] = useState(false);
   
-  const isOwnPost = currentUserId && user.id === String(currentUserId);
-  
-  // Debug log para verificar la comparación
-  console.log('🔍 PostCard - Post ownership check:', {
-    postId: post.id,
-    userId: user.id,
-    currentUserId,
-    userIdType: typeof user.id,
-    currentUserIdType: typeof currentUserId,
-    isOwnPost,
-    comparison: `${user.id} === ${String(currentUserId)}`
-  });
+  const userData = formatPostUser(post?.user);
+  const bookData = formatPostBook(post?.book);
+  const isOwnPost = isPostOwner(post?.user?.id, currentUserId);
+  const stats = getPostStats(post);
 
-  const handleDeletePost = () => {
+  const handleDeletePost = useCallback(() => {
     Alert.alert(
       'Eliminar publicación',
       '¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.',
@@ -36,25 +25,37 @@ export default function PostCard({ post, onLike, onOpenComments, onUnfollow, onB
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            onDelete && onDelete(post.id);
+            onDelete?.(post.id);
             setShowMenu(false);
           },
         },
       ]
     );
-  };
+  }, [onDelete, post.id]);
+
+  const handleBookPress = useCallback(() => {
+    onBookPress?.(bookData);
+  }, [onBookPress, bookData]);
+
+  const handleUnfollow = useCallback(() => {
+    onUnfollow?.(post?.user?.id);
+  }, [onUnfollow, post?.user?.id]);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Image source={{ uri: avatar }} style={styles.avatar} />
+    <View style={postCardStyles.card}>
+      <View style={postCardStyles.header}>
+        <Image 
+          source={{ uri: userData.avatar }} 
+          style={postCardStyles.avatar}
+          resizeMode="cover"
+        />
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.time}>hoy</Text>
+          <Text style={postCardStyles.name}>{userData.name}</Text>
+          <Text style={postCardStyles.time}>{formatTimeAgo(post?.time)}</Text>
         </View>
         {isOwnPost ? (
           <TouchableOpacity 
-            style={styles.menuButton}
+            style={postCardStyles.menuButton}
             onPress={() => setShowMenu(true)}
             activeOpacity={0.7}
           >
@@ -62,49 +63,44 @@ export default function PostCard({ post, onLike, onOpenComments, onUnfollow, onB
           </TouchableOpacity>
         ) : onUnfollow ? (
           <TouchableOpacity 
-            style={styles.unfollowButton}
-            onPress={() => onUnfollow(user.id)}
+            style={postCardStyles.unfollowButton}
+            onPress={handleUnfollow}
             activeOpacity={0.7}
           >
-            <Text style={styles.unfollowText}>Dejar de seguir</Text>
+            <Text style={postCardStyles.unfollowText}>Dejar de seguir</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      {post?.text ? <Text style={styles.text}>{post.text}</Text> : null}
+      {post?.text && <Text style={postCardStyles.text}>{post.text}</Text>}
 
-      {post?.book ? (
+      {bookData && (
         <TouchableOpacity 
-          style={styles.bookBox}
-          onPress={() => {
-            console.log('📚 PostCard - Book box pressed:', post.book);
-            onBookPress && onBookPress(post.book);
-          }}
+          style={postCardStyles.bookBox}
+          onPress={handleBookPress}
           activeOpacity={0.7}
         >
           <Image 
-            source={{ uri: post.book.cover || 'https://covers.openlibrary.org/b/id/240727-M.jpg' }} 
-            style={styles.bookCover}
-            onError={(error) => console.log('❌ Image load error:', error.nativeEvent.error)}
-            onLoad={() => console.log('✅ Image loaded successfully')}
+            source={{ uri: bookData.cover }} 
+            style={postCardStyles.bookCover}
+            resizeMode="cover"
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.bookTitle}>{post.book.title}</Text>
-            <Text style={styles.bookAuthor}>{post.book.author}</Text>
+            <Text style={postCardStyles.bookTitle}>{bookData.title}</Text>
+            <Text style={postCardStyles.bookAuthor}>{bookData.author}</Text>
           </View>
         </TouchableOpacity>
-      ) : null}
+      )}
 
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={onLike} style={styles.btn}>
-          <Text style={styles.btnText}>❤️ {post.likes || 0}</Text>
+      <View style={postCardStyles.footer}>
+        <TouchableOpacity onPress={onLike} style={postCardStyles.btn}>
+          <Text style={postCardStyles.btnText}>❤️ {stats.likes}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onOpenComments} style={styles.btn}>
-          <Text style={styles.btnText}>💬 {(post.comments || []).length}</Text>
+        <TouchableOpacity onPress={onOpenComments} style={postCardStyles.btn}>
+          <Text style={postCardStyles.btnText}>💬 {stats.comments}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Menu Modal */}
       <Modal
         visible={showMenu}
         transparent={true}
@@ -112,17 +108,17 @@ export default function PostCard({ post, onLike, onOpenComments, onUnfollow, onB
         onRequestClose={() => setShowMenu(false)}
       >
         <TouchableOpacity 
-          style={styles.modalOverlay}
+          style={postCardStyles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowMenu(false)}
         >
-          <View style={styles.menuContainer}>
+          <View style={postCardStyles.menuContainer}>
             <TouchableOpacity 
-              style={styles.menuItem}
+              style={postCardStyles.menuItem}
               onPress={handleDeletePost}
             >
               <MaterialIcons name="delete" size={20} color="#E63946" />
-              <Text style={styles.deleteText}>Eliminar publicación</Text>
+              <Text style={postCardStyles.deleteText}>Eliminar publicación</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>

@@ -1,7 +1,9 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { mainNavigatorStyles } from '../styles/components';
+import { getScreenOptions, getAuthenticatedScreens, getUnauthenticatedScreens, validateAuthState } from '../utils/navigationUtils';
 import TabNavigator from './TabNavigator';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -10,38 +12,42 @@ import ClubRoomScreen from '../screens/ClubRoomScreen';
 
 const Stack = createStackNavigator();
 
+const screenComponents = {
+  TabNavigator,
+  BookDetailScreen,
+  LoginScreen,
+  RegisterScreen,
+  ClubRoomScreen
+};
+
 export default function MainNavigator() {
   const { token, loading } = useContext(AuthContext);
+  const authState = validateAuthState(token, loading);
 
-  if (loading) {
+  const screens = useMemo(() => {
+    return authState.isAuthenticated 
+      ? getAuthenticatedScreens() 
+      : getUnauthenticatedScreens();
+  }, [authState.isAuthenticated]);
+
+  if (authState.shouldShowLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#5A4FFF" />
+      <View style={mainNavigatorStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={mainNavigatorStyles.loadingIndicator.color} />
       </View>
     );
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token ? (
-        <>
-          <Stack.Screen name="Tabs" component={TabNavigator} />
-          <Stack.Screen name="BookDetail" component={BookDetailScreen} />
-          <Stack.Screen
-            name="ClubRoom"
-            component={ClubRoomScreen}
-            options={{
-              headerShown: true,
-              title: 'Club de lectura',
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </>
-      )}
+    <Stack.Navigator screenOptions={getScreenOptions()}>
+      {screens.map((screen) => (
+        <Stack.Screen
+          key={screen.name}
+          name={screen.name}
+          component={screenComponents[screen.component]}
+          options={getScreenOptions(screen.title)}
+        />
+      ))}
     </Stack.Navigator>
   );
 }

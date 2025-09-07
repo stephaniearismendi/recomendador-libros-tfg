@@ -1,68 +1,120 @@
-import React, { useMemo, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, FlatList, Image, Platform } from 'react-native';
-import styles from '../styles/composeStoryStyles';
-
-const FALLBACK = 'https://covers.openlibrary.org/b/id/240727-M.jpg';
+import React, { useState, useCallback } from 'react';
+import { Modal, View, Text, TouchableOpacity, TextInput, FlatList, Image, Platform, Alert } from 'react-native';
+import { modalStyles } from '../styles/components/ModalStyles';
+import { getBookCoverUri, validateBookData } from '../utils/imageUtils';
 
 export default function ComposeStoryModal({ visible, onClose, onSubmit, favorites = [] }) {
   const [caption, setCaption] = useState('');
   const [selected, setSelected] = useState(null);
 
-  const favs = useMemo(() => (Array.isArray(favorites) ? favorites : []), [favorites]);
+  const safeFavorites = Array.isArray(favorites) ? favorites.filter(validateBookData) : [];
 
-  const coverUri = (b) => {
-    const s = typeof b?.image === 'string' ? b.image : null;
-    const o = typeof b?.image === 'object' && b?.image?.uri ? b.image.uri : null;
-    return s || o || b?.cover || b?.coverUrl || FALLBACK;
-  };
+  const handleSubmit = useCallback(() => {
+    const trimmedCaption = caption.trim();
+    
+    if (!trimmedCaption && !selected) {
+      Alert.alert('Error', 'Debes escribir algo o seleccionar un libro');
+      return;
+    }
 
-  const onConfirm = () => {
-    onSubmit({ caption: caption.trim(), book: selected ? { ...selected, cover: coverUri(selected) } : null });
-    setCaption('');
-    setSelected(null);
-  };
+    try {
+      onSubmit({ 
+        caption: trimmedCaption, 
+        book: selected ? { 
+          ...selected, 
+          cover: getBookCoverUri(selected) 
+        } : null 
+      });
+      setCaption('');
+      setSelected(null);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo publicar la historia');
+    }
+  }, [caption, selected, onSubmit]);
+
+  const handleBookSelect = useCallback((item) => {
+    setSelected(prev => prev?.id === item.id ? null : item);
+  }, []);
+
+  const renderBookItem = useCallback(({ item }) => (
+    <TouchableOpacity
+      style={[
+        modalStyles.bookItem,
+        selected?.id === item.id && modalStyles.bookItemSelected
+      ]}
+      onPress={() => handleBookSelect(item)}
+      activeOpacity={0.7}
+    >
+      <Image 
+        source={{ uri: getBookCoverUri(item) }} 
+        style={modalStyles.bookCover}
+        resizeMode="cover"
+      />
+      <Text numberOfLines={2} style={modalStyles.bookTitle}>
+        {item.title}
+      </Text>
+    </TouchableOpacity>
+  ), [selected, handleBookSelect]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={[styles.backdrop, { position: Platform.OS === 'web' ? 'fixed' : 'absolute' }]}>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Crear historia</Text>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={onClose}
+    >
+      <View style={[
+        modalStyles.backdrop,
+        { position: Platform.OS === 'web' ? 'fixed' : 'absolute' }
+      ]}>
+        <View style={modalStyles.sheet}>
+          <Text style={modalStyles.title}>Crear historia</Text>
 
-          <Text style={styles.label}>Texto</Text>
-          <TextInput
-            value={caption}
-            onChangeText={setCaption}
-            placeholder="¿Qué quieres contar?"
-            style={styles.input}
-          />
-
-          <Text style={[styles.label, { marginTop: 12 }]}>Adjuntar libro de favoritos</Text>
-          {favs.length === 0 ? (
-            <Text style={styles.hint}>No tienes favoritos todavía.</Text>
-          ) : (
-            <FlatList
-              data={favs}
-              horizontal
-              keyExtractor={(b) => String(b.id || b.title)}
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.bookItem, selected?.id === item.id && styles.bookItemSelected]}
-                  onPress={() => setSelected(item)}
-                >
-                  <Image source={{ uri: coverUri(item) }} style={styles.bookCover} />
-                  <Text numberOfLines={1} style={styles.bookTitle}>{item.title}</Text>
-                </TouchableOpacity>
-              )}
+          <View>
+            <Text style={modalStyles.label}>Texto</Text>
+            <TextInput
+              value={caption}
+              onChangeText={setCaption}
+              placeholder="¿Qué quieres contar?"
+              style={modalStyles.input}
+              multiline
+              maxLength={500}
+              textAlignVertical="top"
             />
-          )}
+          </View>
 
-          <View style={styles.rowEnd}>
-            <TouchableOpacity style={styles.btnGhost} onPress={onClose}>
-              <Text style={styles.btnGhostText}>Cancelar</Text>
+          <View>
+            <Text style={modalStyles.label}>Adjuntar libro</Text>
+            {safeFavorites.length === 0 ? (
+              <Text style={modalStyles.hint}>No tienes favoritos todavía</Text>
+            ) : (
+              <FlatList
+                data={safeFavorites}
+                horizontal
+                keyExtractor={(book) => String(book.id || book.title)}
+                showsHorizontalScrollIndicator={false}
+                style={modalStyles.bookList}
+                renderItem={renderBookItem}
+              />
+            )}
+          </View>
+
+          <View style={modalStyles.actions}>
+            <TouchableOpacity 
+              style={[modalStyles.button, modalStyles.buttonSecondary]} 
+              onPress={onClose}
+            >
+              <Text style={[modalStyles.buttonText, modalStyles.buttonTextSecondary]}>
+                Cancelar
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnPrimary} onPress={onConfirm}>
-              <Text style={styles.btnPrimaryText}>Publicar</Text>
+            <TouchableOpacity 
+              style={[modalStyles.button, modalStyles.buttonPrimary]} 
+              onPress={handleSubmit}
+            >
+              <Text style={[modalStyles.buttonText, modalStyles.buttonTextPrimary]}>
+                Publicar
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

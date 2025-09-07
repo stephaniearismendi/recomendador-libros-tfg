@@ -1,157 +1,137 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { getUserProfile, register as apiRegister } from '../api/api';
+import { 
+  setSecureItem, 
+  getSecureItem, 
+  deleteSecureItem, 
+  validateToken, 
+  validateUserData, 
+  validateRegistrationData 
+} from '../utils/authContextUtils';
 
 export const AuthContext = createContext();
-
-async function setItem(key, value) {
-  if (Platform.OS === 'web') return AsyncStorage.setItem(key, value);
-  return SecureStore.setItemAsync(key, value);
-}
-
-async function getItem(key) {
-  if (Platform.OS === 'web') return AsyncStorage.getItem(key);
-  return SecureStore.getItemAsync(key);
-}
-
-async function deleteItem(key) {
-  if (Platform.OS === 'web') return AsyncStorage.removeItem(key);
-  return SecureStore.deleteItemAsync(key);
-}
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadUserData = async (authToken) => {
-    if (!authToken) {
-      console.log('🔍 AuthContext: No token provided, setting user to null');
+  const loadUserData = useCallback(async (authToken) => {
+    if (!authToken || !validateToken(authToken)) {
       setUser(null);
       return;
     }
 
     try {
-      console.log('🔍 AuthContext: Loading user data with token...');
       const response = await getUserProfile(authToken);
-      console.log('🔍 AuthContext: getUserProfile response:', {
-        hasResponse: !!response,
-        hasData: !!response?.data,
-        hasUser: !!response?.data?.user,
-        user: response?.data?.user
-      });
+      const userData = response?.data?.user;
       
-      if (response?.data?.user) {
-        console.log('✅ AuthContext: User data loaded successfully:', response.data.user);
-        setUser(response.data.user);
+      
+      if (userData) {
+        setUser(validateUserData(userData));
       } else {
-        console.log('❌ AuthContext: No user data in response');
         setUser(null);
       }
     } catch (error) {
-      console.error('❌ AuthContext: Error cargando datos del usuario:', error);
       setUser(null);
     }
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const stored = await getItem('token');
-        console.log('🔍 AuthContext: Token loaded from storage:', {
-          hasToken: !!stored,
-          tokenLength: stored?.length || 0,
-          tokenPreview: stored ? stored.substring(0, 20) + '...' : 'none'
-        });
-        setToken(stored);
-        if (stored) {
-          await loadUserData(stored);
-        }
-      } catch (e) {
-        console.error('Error cargando token', e);
-      } finally {
-        setLoading(false);
-      }
-    })();
   }, []);
 
-  const login = async (newToken) => {
+  const initializeAuth = useCallback(async () => {
     try {
-      console.log('🔍 AuthContext: Login called with token:', {
-        hasToken: !!newToken,
-        tokenLength: newToken?.length || 0,
-        tokenPreview: newToken ? newToken.substring(0, 20) + '...' : 'none'
-      });
-      await setItem('token', newToken);
+      const storedToken = await getSecureItem('token');
+      
+      if (storedToken && validateToken(storedToken)) {
+        setToken(storedToken);
+        await loadUserData(storedToken);
+      } else if (storedToken) {
+        await deleteSecureItem('token');
+        setToken(null);
+        setUser(null);
+      }
+    } catch (error) {
+      setToken(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadUserData]);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  const login = useCallback(async (newToken) => {
+    if (!newToken || !validateToken(newToken)) {
+      throw new Error('Invalid token');
+    }
+
+    try {
+      await setSecureItem('token', newToken);
       setToken(newToken);
       await loadUserData(newToken);
-      console.log('✅ AuthContext: Login completed successfully');
-    } catch (e) {
-      console.error('Error guardando token', e);
+    } catch (error) {
+      throw new Error('Failed to save token');
     }
-  };
+  }, [loadUserData]);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
+    const validatedData = validateRegistrationData(userData);
+    if (!validatedData) {
+      throw new Error('Invalid registration data');
+    }
+
     try {
-      console.log('🔍 AuthContext: Register called with data:', {
-        hasName: !!userData.name,
-        hasUsername: !!userData.username,
-        hasEmail: !!userData.email,
-        hasPassword: !!userData.password
-      });
-      
-      const response = await apiRegister(userData);
-      console.log('✅ AuthContext: Registration successful');
+      const response = await apiRegister(validatedData);
       return response;
-    } catch (e) {
-      console.error('❌ AuthContext: Registration failed:', e);
-      throw e;
+    } catch (error) {
+      throw error;
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
-      await deleteItem('token');
+      await deleteSecureItem('token');
       setToken(null);
       setUser(null);
-      console.log('✅ User logged out successfully');
-    } catch (e) {
-      console.error('Error eliminando token', e);
-    }
-  };
-
-  const clearExpiredToken = async () => {
-    try {
-      await deleteItem('token');
+    } catch (error) {
       setToken(null);
       setUser(null);
-      console.log('✅ Expired token cleared');
-    } catch (e) {
-      console.error('Error clearing expired token', e);
     }
-  };
+  }, []);
 
-  const refreshUserData = async () => {
-    if (token) {
+  const clearExpiredToken = useCallback(async () => {
+    try {
+      await deleteSecureItem('token');
+      setToken(null);
+      setUser(null);
+    } catch (error) {
+      setToken(null);
+      setUser(null);
+    }
+  }, []);
+
+  const refreshUserData = useCallback(async () => {
+    if (token && validateToken(token)) {
       await loadUserData(token);
+    } else {
+      await clearExpiredToken();
     }
-  };
+  }, [token, loadUserData, clearExpiredToken]);
 
+  const value = {
+    token,
+    user,
+    login,
+    register,
+    logout,
+    loading,
+    refreshUserData,
+    clearExpiredToken
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-      token, 
-      user, 
-      login, 
-      register,
-      logout, 
-      loading, 
-      refreshUserData,
-      clearExpiredToken
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
