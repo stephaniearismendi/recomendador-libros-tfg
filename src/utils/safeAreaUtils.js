@@ -21,11 +21,11 @@ export const useCustomSafeArea = () => {
     if (Platform.OS === 'android') {
       return {
         paddingTop: 16,
-        paddingBottom: Math.max(insets.bottom, 60)
+        paddingBottom: Math.max(insets.bottom, 20)
       };
     }
     return {
-      paddingBottom: Math.max(insets.bottom, 40)
+      paddingBottom: Math.max(insets.bottom, 15)
     };
   };
 

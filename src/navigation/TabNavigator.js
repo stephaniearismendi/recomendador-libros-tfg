@@ -20,13 +20,32 @@ const TabNavigator = () => {
       return {
         height: 50 + Math.max(insets.bottom, 15),
         paddingBottom: Math.max(insets.bottom, 15),
-        paddingTop: 5,
+        paddingTop: 0,
+        marginTop: 0,
+        marginBottom: 0,
+        borderTopWidth: 0,
+        elevation: 0,
+        shadowOpacity: 0,
+        backgroundColor: '#FFFFFF',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
       };
     }
     return {
       height: 35 + insets.bottom,
       paddingBottom: insets.bottom,
       paddingTop: 0,
+      marginTop: 0,
+      marginBottom: 0,
+      borderTopWidth: 0,
+      shadowOpacity: 0,
+      backgroundColor: '#FFFFFF',
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
     };
   };
 
