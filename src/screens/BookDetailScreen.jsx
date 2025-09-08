@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +19,7 @@ import {
 } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import { bookDetailStyles } from '../styles/components';
+import { useCustomSafeArea } from '../utils/safeAreaUtils';
 import { 
   canonicalId, 
   resolveCoverUri, 
@@ -31,6 +31,7 @@ export default function BookDetailScreen({ route }) {
   const { book, bookKey } = route.params;
   const navigation = useNavigation();
   const { token, user } = useContext(AuthContext);
+  const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
 
   const [details, setDetails] = useState({ description: '', rating: null, image: null });
   const [loading, setLoading] = useState(true);
@@ -121,8 +122,8 @@ export default function BookDetailScreen({ route }) {
   };
 
   return (
-    <SafeAreaView style={bookDetailStyles.safe}>
-      <ScrollView contentContainerStyle={bookDetailStyles.container}>
+    <View style={[bookDetailStyles.safe, getContainerStyle()]}>
+      <ScrollView contentContainerStyle={[bookDetailStyles.container, getScrollStyle()]}>
         <TouchableOpacity style={bookDetailStyles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={28} color="#3b5998" />
         </TouchableOpacity>
@@ -161,7 +162,7 @@ export default function BookDetailScreen({ route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
