@@ -396,4 +396,68 @@ export const profileStyles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     color: '#fff',
   },
+  achievementsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  achievementsTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  achievementsTitle: {
+    ...TYPOGRAPHY.subheading,
+    fontFamily: 'Poppins-SemiBold',
+    marginLeft: 8,
+  },
+  achievementsStats: {
+    alignItems: 'flex-end',
+  },
+  achievementsPoints: {
+    ...TYPOGRAPHY.subheading,
+    fontFamily: 'Poppins-Bold',
+    color: COLORS.ACCENT,
+  },
+  achievementsPointsLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.SUBT,
+  },
+  achievementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  noAchievements: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  noAchievementsText: {
+    ...TYPOGRAPHY.body,
+    fontFamily: 'Poppins-SemiBold',
+    color: COLORS.SUBT,
+    marginTop: 8,
+  },
+  noAchievementsSubtext: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.SUBT,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  viewAllAchievements: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.BORDER,
+  },
+  viewAllAchievementsText: {
+    ...TYPOGRAPHY.body,
+    fontFamily: 'Poppins-SemiBold',
+    color: COLORS.ACCENT,
+    marginRight: 4,
+  },
 });

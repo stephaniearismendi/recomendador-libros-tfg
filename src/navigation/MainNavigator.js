@@ -3,12 +3,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { mainNavigatorStyles } from '../styles/components';
-import { getScreenOptions, getAuthenticatedScreens, getUnauthenticatedScreens, validateAuthState } from '../utils/navigationUtils';
+import {
+  getScreenOptions,
+  getAuthenticatedScreens,
+  getUnauthenticatedScreens,
+  validateAuthState,
+} from '../utils/navigationUtils';
 import TabNavigator from './TabNavigator';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ClubRoomScreen from '../screens/ClubRoomScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
 
 const Stack = createStackNavigator();
 
@@ -17,7 +23,8 @@ const screenComponents = {
   BookDetailScreen,
   LoginScreen,
   RegisterScreen,
-  ClubRoomScreen
+  ClubRoomScreen,
+  AchievementsScreen,
 };
 
 export default function MainNavigator() {
@@ -25,9 +32,7 @@ export default function MainNavigator() {
   const authState = validateAuthState(token, loading);
 
   const screens = useMemo(() => {
-    return authState.isAuthenticated 
-      ? getAuthenticatedScreens() 
-      : getUnauthenticatedScreens();
+    return authState.isAuthenticated ? getAuthenticatedScreens() : getUnauthenticatedScreens();
   }, [authState.isAuthenticated]);
 
   if (authState.shouldShowLoading) {

@@ -9,8 +9,9 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { registerStyles } from '../styles/components';
 import {
@@ -29,7 +30,7 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleRegister = async () => {
@@ -41,10 +42,8 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
-      
       const registrationData = formatRegistrationData(formData);
       await register(registrationData);
-      
       showRegistrationSuccess(navigation);
     } catch (error) {
       const errorMessage = handleRegistrationError(error);
@@ -60,7 +59,7 @@ export default function RegisterScreen({ navigation }) {
       <View style={registerStyles.floatingElement1} />
       <View style={registerStyles.floatingElement2} />
       <View style={registerStyles.floatingElement3} />
-      
+
       <SafeAreaView style={registerStyles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -75,21 +74,19 @@ export default function RegisterScreen({ navigation }) {
                 style={registerStyles.backButton}
                 onPress={() => navigation.goBack()}
               >
-                <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
-              
+
               <View style={registerStyles.logoContainer}>
                 <View style={registerStyles.logoBackground}>
-                  <MaterialIcons name="auto-stories" size={40} color="#5A4FFF" />
+                  <Ionicons name="book" size={40} color="#5A4FFF" />
                 </View>
                 <Text style={registerStyles.logoText}>Read-It</Text>
                 <View style={registerStyles.logoAccent} />
               </View>
-              
+
               <Text style={registerStyles.title}>Crear cuenta</Text>
-              <Text style={registerStyles.subtitle}>
-                Únete a nuestra comunidad de lectores
-              </Text>
+              <Text style={registerStyles.subtitle}>Únete a nuestra comunidad de lectores</Text>
             </View>
 
             <View style={registerStyles.glassContainer}>
@@ -98,7 +95,7 @@ export default function RegisterScreen({ navigation }) {
                   <Text style={registerStyles.inputLabel}>Nombre completo</Text>
                   <View style={registerStyles.inputContainer}>
                     <View style={registerStyles.inputIconContainer}>
-                      <MaterialIcons name="person" size={18} color="#5A4FFF" />
+                      <Ionicons name="person" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
                       style={registerStyles.input}
@@ -116,7 +113,7 @@ export default function RegisterScreen({ navigation }) {
                   <Text style={registerStyles.inputLabel}>Nombre de usuario</Text>
                   <View style={registerStyles.inputContainer}>
                     <View style={registerStyles.inputIconContainer}>
-                      <MaterialIcons name="alternate-email" size={18} color="#5A4FFF" />
+                      <Ionicons name="at" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
                       style={registerStyles.input}
@@ -134,7 +131,7 @@ export default function RegisterScreen({ navigation }) {
                   <Text style={registerStyles.inputLabel}>Email</Text>
                   <View style={registerStyles.inputContainer}>
                     <View style={registerStyles.inputIconContainer}>
-                      <MaterialIcons name="email" size={18} color="#5A4FFF" />
+                      <Ionicons name="mail" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
                       style={registerStyles.input}
@@ -153,7 +150,7 @@ export default function RegisterScreen({ navigation }) {
                   <Text style={registerStyles.inputLabel}>Contraseña</Text>
                   <View style={registerStyles.inputContainer}>
                     <View style={registerStyles.inputIconContainer}>
-                      <MaterialIcons name="lock" size={18} color="#5A4FFF" />
+                      <Ionicons name="lock-closed" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
                       style={registerStyles.input}
@@ -182,7 +179,7 @@ export default function RegisterScreen({ navigation }) {
                   <Text style={registerStyles.inputLabel}>Confirmar contraseña</Text>
                   <View style={registerStyles.inputContainer}>
                     <View style={registerStyles.inputIconContainer}>
-                      <MaterialIcons name="lock" size={18} color="#5A4FFF" />
+                      <Ionicons name="lock-closed" size={18} color="#5A4FFF" />
                     </View>
                     <TextInput
                       style={registerStyles.input}
@@ -218,7 +215,7 @@ export default function RegisterScreen({ navigation }) {
                     ) : (
                       <>
                         <Text style={registerStyles.registerButtonText}>Crear cuenta</Text>
-                        <MaterialIcons name="arrow-forward" size={18} color="#fff" />
+                        <Ionicons name="arrow-forward" size={18} color="#fff" />
                       </>
                     )}
                   </View>
@@ -229,10 +226,7 @@ export default function RegisterScreen({ navigation }) {
             <View style={registerStyles.footer}>
               <Text style={registerStyles.footerText}>
                 ¿Ya tienes una cuenta?{' '}
-                <Text
-                  style={registerStyles.linkText}
-                  onPress={() => navigation.navigate('Login')}
-                >
+                <Text style={registerStyles.linkText} onPress={() => navigation.navigate('Login')}>
                   Iniciar sesión
                 </Text>
               </Text>

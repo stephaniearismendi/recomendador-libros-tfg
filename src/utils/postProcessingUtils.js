@@ -1,8 +1,6 @@
 import { getBookCoverUri } from './imageUtils';
 import { getUserAvatar, getUserDisplayName } from './userUtils';
 
-const FALLBACK_COVER = 'https://covers.openlibrary.org/b/id/240727-M.jpg';
-
 export const processBackendPost = (post) => {
   if (!post) return null;
   

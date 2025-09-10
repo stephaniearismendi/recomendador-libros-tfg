@@ -39,25 +39,25 @@ import {
   deletePost,
 } from '../api/api';
 import { getTokenData } from '../utils/authContextUtils';
-import { 
-  getCached, 
-  setCached, 
-  hasValidToken, 
-  loadFollowingState, 
-  toggleFollowUser 
+import {
+  getCached,
+  setCached,
+  hasValidToken,
+  loadFollowingState,
+  toggleFollowUser,
 } from '../utils/socialUtils';
-import { 
-  loadStories, 
-  publishStory as publishStoryUtil, 
-  buildStorySlides 
+import {
+  loadStories,
+  publishStory as publishStoryUtil,
+  buildStorySlides,
 } from '../utils/storyUtils';
-import { 
-  processFeedPosts, 
-  createNewPost, 
-  updatePostLikes, 
-  addPostComment, 
-  removePostComment, 
-  filterPostsByUser 
+import {
+  processFeedPosts,
+  createNewPost,
+  updatePostLikes,
+  addPostComment,
+  removePostComment,
+  filterPostsByUser,
 } from '../utils/postProcessingUtils';
 import { getBookCoverUri } from '../utils/imageUtils';
 import { useCustomSafeArea } from '../utils/safeAreaUtils';
@@ -73,7 +73,6 @@ export default function SocialScreen() {
   const { token, logout, user } = useContext(AuthContext);
   const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
   const [userId, setUserId] = useState(null);
-
 
   const [favorites, setFavorites] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
@@ -117,7 +116,6 @@ export default function SocialScreen() {
     }
   }, [token, user]);
 
-
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -126,10 +124,10 @@ export default function SocialScreen() {
         if (cachedClubs) setClubs(cachedClubs);
 
         const [clubsRes, popRes] = await Promise.all([
-        getClubs().catch(() => ({ data: [] })),
-        getPopularBooks().catch(() => ({ data: [] })),
+          getClubs().catch(() => ({ data: [] })),
+          getPopularBooks().catch(() => ({ data: [] })),
         ]);
-        
+
         const liveClubs = clubsRes.data || [];
         setClubs(liveClubs);
         setCached(CLUBS_CACHE_KEY, liveClubs);
@@ -145,9 +143,9 @@ export default function SocialScreen() {
 
   useEffect(() => {
     if (!userId || !token) return;
-    
+
     let isMounted = true;
-    
+
     (async () => {
       try {
         const followingState = await loadFollowingState(userId, token);
@@ -160,7 +158,7 @@ export default function SocialScreen() {
         }
       }
     })();
-    
+
     return () => {
       isMounted = false;
     };
@@ -182,26 +180,26 @@ export default function SocialScreen() {
     return getBookCoverUri(book);
   }, []);
 
-  const buildStorySlidesCallback = useCallback(
-    (n = 2) => buildStorySlides(popular, n),
-    [popular],
-  );
+  const buildStorySlidesCallback = useCallback((n = 2) => buildStorySlides(popular, n), [popular]);
 
   const loadRemote = useCallback(async () => {
     if (!hasValidToken(token) || !userId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const [feedRes, favoritesRes] = await Promise.all([
         getFeed(token).catch((error) => {
-          if (error?.response?.status === 401 && error?.response?.data?.message?.includes('token')) {
+          if (
+            error?.response?.status === 401 &&
+            error?.response?.data?.message?.includes('token')
+          ) {
             logout();
           }
           return { data: [] };
         }),
-        getFavorites(userId, token).catch(() => ({ data: [] }))
+        getFavorites(userId, token).catch(() => ({ data: [] })),
       ]);
 
       let suggestionsRes = { data: [] };
@@ -212,7 +210,7 @@ export default function SocialScreen() {
           suggestionsRes = await getSuggestionsNoAuth();
         } catch {}
       }
-      
+
       const apiSugg = (suggestionsRes.data || [])
         .filter((u) => String(u.id) !== String(userId))
         .map((u) => ({
@@ -221,20 +219,18 @@ export default function SocialScreen() {
           avatar: u.avatar,
           canFollow: true,
         }));
-      
+
       setSuggestions(apiSugg);
       setUserFavorites(favoritesRes.data || []);
 
-      const followedUserIds = Object.keys(following).filter(id => 
-        following[id] && id !== 'ts'
-      );
-      
+      const followedUserIds = Object.keys(following).filter((id) => following[id] && id !== 'ts');
+
       const stories = await loadStories(token, userId, user);
       setStories(stories);
-      
+
       const posts = processFeedPosts(feedRes.data, followedUserIds, userId, MAX_FEED_POSTS);
       setAllPosts(posts);
-      
+
       await setCached(POSTS_CACHE_KEY, posts);
     } catch (error) {
       setError('Error al cargar el feed');
@@ -243,21 +239,21 @@ export default function SocialScreen() {
     }
   }, [token, userId, user, logout, following]);
 
-
-
   useFocusEffect(
     useCallback(() => {
       if (!userId || !token) return;
       loadRemote();
-      
-      // Refresh clubs to sync with other devices
-      getClubs().then(res => {
-        if (res?.data) {
-          setClubs(res.data);
-          setCached(CLUBS_CACHE_KEY, res.data);
-        }
-      }).catch(() => {});
-    }, [userId, token, loadRemote])
+
+      // Refresh clubs
+      getClubs()
+        .then((res) => {
+          if (res?.data) {
+            setClubs(res.data);
+            setCached(CLUBS_CACHE_KEY, res.data);
+          }
+        })
+        .catch(() => {});
+    }, [userId, token, loadRemote]),
   );
 
   const followedIds = useMemo(
@@ -269,7 +265,6 @@ export default function SocialScreen() {
   }, [allPosts]);
 
   const filteredSuggestions = useMemo(() => {
-    // Show all suggestions
     return suggestions;
   }, [suggestions]);
 
@@ -284,17 +279,14 @@ export default function SocialScreen() {
     }
   }, [loadRemote]);
 
-
-
-
   const onLike = useCallback(
     async (postId) => {
       if (!hasValidToken(token)) return;
-      
+
       setAllPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p))
+        prev.map((p) => (p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p)),
       );
-      
+
       try {
         const r = await likePost(postId, token);
         if (r?.data?.likes != null) {
@@ -305,7 +297,7 @@ export default function SocialScreen() {
           logout();
         }
         setAllPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, likes: Math.max(0, (p.likes || 0) - 1) } : p))
+          prev.map((p) => (p.id === postId ? { ...p, likes: Math.max(0, (p.likes || 0) - 1) } : p)),
         );
       }
     },
@@ -315,16 +307,16 @@ export default function SocialScreen() {
   const onAddComment = useCallback(
     async (postId, text) => {
       if (!hasValidToken(token)) return;
-      
-      const newC = { 
-        id: `c_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
-        user: me, 
-        text, 
-        time: new Date().toISOString() 
+
+      const newC = {
+        id: `c_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        user: me,
+        text,
+        time: new Date().toISOString(),
       };
-      
+
       setAllPosts((prev) => addPostComment(prev, postId, newC));
-      
+
       try {
         await commentPost(postId, text, token);
       } catch (error) {
@@ -340,17 +332,17 @@ export default function SocialScreen() {
   const handleCreatePost = useCallback(
     async (postData) => {
       if (!hasValidToken(token)) return;
-      
+
       if (!userId) {
         Alert.alert('Error', 'No se pudo identificar al usuario. Inténtalo de nuevo.');
         return;
       }
-      
+
       setPosting(true);
       try {
         const response = await createPost(postData, token);
         const newPost = createNewPost(response.data, userId, user);
-        setAllPosts(prev => [newPost, ...prev]);
+        setAllPosts((prev) => [newPost, ...prev]);
         Alert.alert('Éxito', 'Publicación creada correctamente');
       } catch (error) {
         Alert.alert('Error', 'No se pudo crear la publicación');
@@ -361,23 +353,22 @@ export default function SocialScreen() {
     [userId, user, token],
   );
 
-
   const publishStory = useCallback(
     async ({ caption, book }) => {
       if (!hasValidToken(token)) {
         Alert.alert('Error', 'No estás autenticado');
         return;
       }
-      
+
       try {
         const storyData = {
           content: caption || (book?.title ?? 'Mi historia'),
           bookTitle: book?.title || null,
-          bookCover: getBookCoverUri(book)
+          bookCover: getBookCoverUri(book),
         };
-        
+
         const result = await publishStoryUtil(storyData, token);
-        
+
         if (result.success) {
           await loadRemote();
           setComposeStoryVisible(false);
@@ -392,95 +383,109 @@ export default function SocialScreen() {
     [token, loadRemote],
   );
 
-  const handleBookPress = useCallback((book) => {
-    if (!book || !book.id) return;
+  const handleBookPress = useCallback(
+    (book) => {
+      if (!book || !book.id) return;
 
-    let bookKey;
-    if (book.id.includes('/books/')) {
-      bookKey = book.id.split('/books/')[1];
-    } else if (book.id.match(/^\d{10,13}$/)) {
-      bookKey = book.id;
-    } else {
-      bookKey = book.id;
-    }
+      let bookKey;
+      if (book.id.includes('/books/')) {
+        bookKey = book.id.split('/books/')[1];
+      } else if (book.id.match(/^\d{10,13}$/)) {
+        bookKey = book.id;
+      } else {
+        bookKey = book.id;
+      }
 
-    navigation.navigate('BookDetail', {
-      book: book,
-      bookKey: bookKey
-    });
-  }, [navigation]);
+      navigation.navigate('BookDetail', {
+        book: book,
+        bookKey: bookKey,
+      });
+    },
+    [navigation],
+  );
 
-  const handleDeletePost = useCallback(async (postId) => {
-    try {
-      await deletePost(postId, token);
-      setAllPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo eliminar la publicación. Inténtalo de nuevo.');
-    }
-  }, [token]);
+  const handleDeletePost = useCallback(
+    async (postId) => {
+      try {
+        await deletePost(postId, token);
+        setAllPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+      } catch (error) {
+        Alert.alert('Error', 'No se pudo eliminar la publicación. Inténtalo de nuevo.');
+      }
+    },
+    [token],
+  );
 
   const onToggleFollow = useCallback(
     async (uid) => {
       if (!hasValidToken(token)) return;
-      
+
       if (String(uid) === String(userId)) {
         Alert.alert('Error', 'No puedes seguirte a ti mismo');
         return;
       }
-      
+
       if (!uid || uid === 'unknown' || uid === 'undefined' || uid === 'null') {
         Alert.alert('Error', 'ID de usuario no válido');
         return;
       }
-      
+
       const cleanUid = parseInt(String(uid).trim(), 10);
       if (!cleanUid || isNaN(cleanUid)) {
         Alert.alert('Error', 'ID de usuario no válido');
         return;
       }
-      
-      const isCurrentlyFollowing = following[uid] || following[cleanUid] || following[String(cleanUid)];
-      
-      setFollowing(prevFollowing => {
+
+      const isCurrentlyFollowing =
+        following[uid] || following[cleanUid] || following[String(cleanUid)];
+
+      setFollowing((prevFollowing) => {
         const newFollowingState = !isCurrentlyFollowing;
         const optimisticState = { ...prevFollowing, [cleanUid]: newFollowingState };
         return optimisticState;
       });
-      
+
       try {
         const result = await toggleFollowUser(uid, userId, token, following);
-        
+
         if (result.success) {
           setFollowing(result.following);
-          
+
           if (result.newState) {
             try {
               const feedRes = await getFeed(token);
-              const followedUserIds = Object.keys(result.following).filter(id => result.following[id] && id !== 'ts');
-              const newPosts = processFeedPosts(feedRes.data, followedUserIds, userId, MAX_FEED_POSTS);
-              
-              // Only add new posts from the followed user  
-              setAllPosts(prevPosts => {
-                const existingPostIds = new Set(prevPosts.map(p => p.id));
-                const newUserPosts = newPosts.filter(post => 
-                  post.user.id === String(cleanUid) && !existingPostIds.has(post.id)
+              const followedUserIds = Object.keys(result.following).filter(
+                (id) => result.following[id] && id !== 'ts',
+              );
+              const newPosts = processFeedPosts(
+                feedRes.data,
+                followedUserIds,
+                userId,
+                MAX_FEED_POSTS,
+              );
+
+              setAllPosts((prevPosts) => {
+                const existingPostIds = new Set(prevPosts.map((p) => p.id));
+                const newUserPosts = newPosts.filter(
+                  (post) => post.user.id === String(cleanUid) && !existingPostIds.has(post.id),
                 );
                 return [...newUserPosts, ...prevPosts];
               });
             } catch (error) {
-              // Handle feed refresh error
+              // Handle error
             }
           } else {
-            // User was unfollowed - remove their posts and stories immediately
-            setAllPosts(prevPosts => filterPostsByUser(prevPosts, cleanUid));
-            setStories(prevStories => prevStories.filter(story => story.id !== String(cleanUid)));
+            setAllPosts((prevPosts) => filterPostsByUser(prevPosts, cleanUid));
+            setStories((prevStories) =>
+              prevStories.filter((story) => story.id !== String(cleanUid)),
+            );
           }
         } else {
-          setFollowing(prevFollowing => {
+          setFollowing((prevFollowing) => {
             const revertedState = { ...prevFollowing, [cleanUid]: isCurrentlyFollowing };
             return revertedState;
           });
-          
+
           if (result.error === 'Cannot follow self') {
             Alert.alert('Error', 'No puedes seguirte a ti mismo');
           } else if (result.error === 'Invalid user') {
@@ -493,7 +498,7 @@ export default function SocialScreen() {
           }
         }
       } catch (error) {
-        setFollowing(prevFollowing => {
+        setFollowing((prevFollowing) => {
           const revertedState = { ...prevFollowing, [cleanUid]: isCurrentlyFollowing };
           return revertedState;
         });
@@ -520,49 +525,49 @@ export default function SocialScreen() {
     [token],
   );
 
-const submitCreateClub = useCallback(
-  async ({ name, book, chapters }) => {
-    if (!token) {
-      Alert.alert('Error', 'No estás autenticado');
-      return;
-    }
-
-    const cover = getBookCoverUri(book);
-    const optimistic = { 
-      id: `tmp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
-      name, 
-      cover, 
-      members: 1 
-    };
-    
-    setClubs((prev) => [optimistic, ...prev]);
-    setCreateClubVisible(false);
-
-    try {
-      const resp = await createClub({ name, cover, chapters }, token);
-      const newId = resp?.data?.id;
-
-      const refreshed = await getClubs();
-      setClubs(refreshed?.data || []);
-      setCached(CLUBS_CACHE_KEY, refreshed?.data || []);
-
-      if (newId) {
-        navigation.navigate('ClubRoom', { clubId: newId, clubName: name, cover });
+  const submitCreateClub = useCallback(
+    async ({ name, book, chapters }) => {
+      if (!token) {
+        Alert.alert('Error', 'No estás autenticado');
+        return;
       }
-    } catch (error) {
-      const refreshed = await getClubs().catch(() => ({ data: [] }));
-      setClubs(refreshed?.data || []);
-      setCached(CLUBS_CACHE_KEY, refreshed?.data || []);
-      
-      if (error?.response?.status === 401) {
-        logout();
-      } else {
-        Alert.alert('Error', 'No se pudo crear el club. Inténtalo de nuevo.');
+
+      const cover = getBookCoverUri(book);
+      const optimistic = {
+        id: `tmp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        cover,
+        members: 1,
+      };
+
+      setClubs((prev) => [optimistic, ...prev]);
+      setCreateClubVisible(false);
+
+      try {
+        const resp = await createClub({ name, cover, chapters }, token);
+        const newId = resp?.data?.id;
+
+        const refreshed = await getClubs();
+        setClubs(refreshed?.data || []);
+        setCached(CLUBS_CACHE_KEY, refreshed?.data || []);
+
+        if (newId) {
+          navigation.navigate('ClubRoom', { clubId: newId, clubName: name, cover });
+        }
+      } catch (error) {
+        const refreshed = await getClubs().catch(() => ({ data: [] }));
+        setClubs(refreshed?.data || []);
+        setCached(CLUBS_CACHE_KEY, refreshed?.data || []);
+
+        if (error?.response?.status === 401) {
+          logout();
+        } else {
+          Alert.alert('Error', 'No se pudo crear el club. Inténtalo de nuevo.');
+        }
       }
-    }
-  },
-  [token, navigation, logout],
-);
+    },
+    [token, navigation, logout],
+  );
 
   const followingCount = followedIds.length;
 
@@ -598,23 +603,23 @@ const submitCreateClub = useCallback(
             <Text style={baseStyles.headerSubtitle}>Conecta con otros lectores</Text>
           </View>
           {user ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={SocialStyles.userAvatar}
               onPress={() => navigation?.navigate?.('Perfil')}
               activeOpacity={0.7}
             >
-              <Image 
-                source={{ 
+              <Image
+                source={{
                   uri: user.avatar || 'https://i.pravatar.cc/150?u=default',
-                  cache: 'reload'
-                }} 
-                style={SocialStyles.avatarImage} 
+                  cache: 'reload',
+                }}
+                style={SocialStyles.avatarImage}
               />
             </TouchableOpacity>
           ) : (
             <View style={SocialStyles.userAvatar}>
-              <Image 
-                source={{ uri: 'https://i.pravatar.cc/150?u=default' }} 
+              <Image
+                source={{ uri: 'https://i.pravatar.cc/150?u=default' }}
                 style={SocialStyles.avatarImage}
               />
             </View>
@@ -624,7 +629,7 @@ const submitCreateClub = useCallback(
         <View style={[baseStyles.card, { marginTop: 16 }]}>
           <View style={baseStyles.rowBetween}>
             <Text style={baseStyles.sectionTitle}>Historias</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={SocialStyles.actionButton}
               onPress={() => setComposeStoryVisible(true)}
             >
@@ -645,7 +650,7 @@ const submitCreateClub = useCallback(
                 active={item.slides && item.slides.length > 0}
                 onPress={() => {
                   if (item.isCurrentUser) {
-                    const currentUserIndex = stories.findIndex(story => story.isCurrentUser);
+                    const currentUserIndex = stories.findIndex((story) => story.isCurrentUser);
                     if (currentUserIndex >= 0) {
                       setViewer({ open: true, index: currentUserIndex });
                     } else {
@@ -654,9 +659,9 @@ const submitCreateClub = useCallback(
                         name: 'Tú',
                         avatar: user?.avatar || `https://i.pravatar.cc/150?u=${userId}`,
                         slides: [],
-                        isCurrentUser: true
+                        isCurrentUser: true,
                       };
-                      setStories(prev => [tempCurrentUserStory, ...prev]);
+                      setStories((prev) => [tempCurrentUserStory, ...prev]);
                       setViewer({ open: true, index: 0 });
                     }
                   } else {
@@ -673,7 +678,7 @@ const submitCreateClub = useCallback(
             <Text style={baseStyles.sectionTitle}>Actividad</Text>
             <View style={SocialStyles.activityActions}>
               {loading && <ActivityIndicator size="small" color={COLORS.ACCENT} />}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={SocialStyles.addActivityButton}
                 onPress={() => setCreatePostModalVisible(true)}
               >
@@ -714,7 +719,7 @@ const submitCreateClub = useCallback(
 
         <View style={baseStyles.card}>
           <Text style={baseStyles.sectionTitle}>Personas que quizá conozcas</Text>
-          
+
           <FlatList
             data={filteredSuggestions}
             horizontal
@@ -735,7 +740,7 @@ const submitCreateClub = useCallback(
         <View style={baseStyles.card}>
           <View style={baseStyles.rowBetween}>
             <Text style={baseStyles.sectionTitle}>Clubs de lectura</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={SocialStyles.actionButton}
               onPress={() => setCreateClubVisible(true)}
             >
@@ -747,7 +752,7 @@ const submitCreateClub = useCallback(
             <View style={SocialStyles.emptyContainer}>
               <MaterialIcons name="group" size={48} color="#ccc" />
               <Text style={SocialStyles.emptyText}>No hay clubs disponibles</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={SocialStyles.createFirstButton}
                 onPress={() => setCreateClubVisible(true)}
               >
@@ -784,14 +789,13 @@ const submitCreateClub = useCallback(
         visible={composeStoryVisible}
         onClose={() => setComposeStoryVisible(false)}
         onSubmit={publishStory}
-        favorites={favorites}
+        favorites={userFavorites}
       />
 
-      {/* Asegúrate de que este modal envíe { name, book, chapters } */}
       <CreateClubModal
         visible={createClubVisible}
         onClose={() => setCreateClubVisible(false)}
-        favorites={favorites}
+        favorites={userFavorites}
         onSubmit={submitCreateClub}
       />
 

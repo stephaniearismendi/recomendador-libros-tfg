@@ -15,10 +15,17 @@ import {
   RefreshControl,
   Switch,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useCustomSafeArea } from '../utils/safeAreaUtils';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
-import { getUserProfile, updateUserProfile, updateUserAvatar, changePassword, deleteAccount } from '../api/api';
+import {
+  getUserProfile,
+  updateUserProfile,
+  updateUserAvatar,
+  changePassword,
+  deleteAccount,
+} from '../api/api';
 import { baseStyles, COLORS } from '../styles/baseStyles';
 import { profileStyles } from '../styles/components';
 import { getUserAvatar } from '../utils/userUtils';
@@ -34,13 +41,15 @@ import {
   showLogoutConfirmation,
   showDeleteAccountConfirmation,
 } from '../utils/profileUtils';
+import { loadUserAchievementsWithDetails, loadUserStats } from '../utils/achievementUtils';
+import AchievementBadge from '../components/AchievementBadge';
 
-const AVATAR_PLACEHOLDER = 'https://i.pravatar.cc/150?u=default';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();
   const { token, user, logout, refreshUserData } = useContext(AuthContext);
   const { getContainerStyle, getScrollStyle } = useCustomSafeArea();
-  
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -55,31 +64,45 @@ export default function ProfileScreen() {
   const [updating, setUpdating] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
-  
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [privateProfile, setPrivateProfile] = useState(false);
   const [showEmail, setShowEmail] = useState(true);
+  const [achievements, setAchievements] = useState({ unlocked: [], points: 0 });
+  const [achievementStats, setAchievementStats] = useState({});
 
   const loadUserProfile = useCallback(async () => {
-    if (!user) return;
-    
+    if (!user || !token) {
+      console.warn('ProfileScreen: Faltan user o token');
+      return;
+    }
+
     try {
       setLoading(true);
       setEditData(getInitialEditData(user));
+
+      const [achievementsData, statsData] = await Promise.all([
+        loadUserAchievementsWithDetails(user.id, token),
+        loadUserStats(user.id, token),
+      ]);
+
+      setAchievements(achievementsData || { achievements: [], totalPoints: 0 });
+      setAchievementStats(statsData || {});
     } catch (error) {
-      console.error('Error setting edit data:', error);
+      console.error('Error loading profile data:', error);
+      setAchievements({ achievements: [], totalPoints: 0 });
+      setAchievementStats({});
+      Alert.alert('Error', 'No se pudieron cargar los achievements. Verifica tu conexión.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, token]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // Force complete user data reload
       await refreshUserData();
     } catch (error) {
-      console.error('Error al refrescar perfil:', error);
     } finally {
       setRefreshing(false);
     }
@@ -95,22 +118,22 @@ export default function ProfileScreen() {
 
   const handleSaveProfile = async () => {
     if (!token) return;
-    
+
     const validation = validateProfileData(editData);
     if (!validation.isValid) {
       Alert.alert('Error', validation.error);
       return;
     }
-    
+
     try {
       setUpdating(true);
-      
+
       const response = await updateUserProfile(editData, token);
       if (response?.data?.user) {
         await refreshUserData();
         setEditModalVisible(false);
         Alert.alert('Éxito', 'Perfil actualizado correctamente');
-        
+
         setTimeout(() => {
           loadUserProfile();
         }, 1000);
@@ -127,7 +150,7 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Por favor ingresa una URL válida');
       return;
     }
-    
+
     try {
       const response = await updateUserAvatar(avatarUrl.trim(), token);
       if (response?.data?.user) {
@@ -147,12 +170,12 @@ export default function ProfileScreen() {
       Alert.alert('Error', validation.error);
       return;
     }
-    
+
     try {
       setChangingPassword(true);
-      
+
       await changePassword(passwordData, token);
-      
+
       setChangePasswordModalVisible(false);
       setPasswordData(getInitialPasswordData());
       Alert.alert('Éxito', 'Contraseña cambiada correctamente');
@@ -176,12 +199,12 @@ export default function ProfileScreen() {
 
     try {
       setDeletingAccount(true);
-      
+
       await deleteAccount(token);
-      
+
       setDeleteAccountModalVisible(false);
       setDeleteConfirmation('');
-      
+
       showDeleteAccountConfirmation(logout);
     } catch (error) {
       handleProfileError(error, logout);
@@ -209,10 +232,14 @@ export default function ProfileScreen() {
   }
 
   if (!user) {
+    if (!token) {
+      return null; // if not user and no tokem, exit
+    }
+
     return (
       <View style={containerStyle}>
         <View style={profileStyles.errorContainer}>
-          <MaterialIcons name="error-outline" size={64} color="#e63946" />
+          <Ionicons name="alert-circle" size={64} color="#e63946" />
           <Text style={profileStyles.errorText}>No se pudo cargar el perfil</Text>
           <TouchableOpacity style={profileStyles.retryButton} onPress={loadUserProfile}>
             <Text style={profileStyles.retryText}>Reintentar</Text>
@@ -227,7 +254,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={containerStyle}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={scrollStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -244,9 +271,9 @@ export default function ProfileScreen() {
         <View style={profileStyles.header}>
           <View style={profileStyles.avatarContainer}>
             <Image
-              source={{ 
+              source={{
                 uri: userAvatar,
-                cache: 'reload'
+                cache: 'reload',
               }}
               style={profileStyles.avatar}
               onLoad={() => {}}
@@ -259,16 +286,16 @@ export default function ProfileScreen() {
                 setAvatarModalVisible(true);
               }}
             >
-              <MaterialIcons name="camera-alt" size={16} color="#fff" />
+              <Ionicons name="camera" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
-          
+
           <Text style={profileStyles.name}>{user.name || 'Sin nombre'}</Text>
           <Text style={profileStyles.username}>@{user.username}</Text>
           {user.bio && <Text style={profileStyles.bio}>{user.bio}</Text>}
-          
+
           <TouchableOpacity style={profileStyles.editProfileButton} onPress={handleEditProfile}>
-            <MaterialIcons name="edit" size={18} color={COLORS.ACCENT} />
+            <Ionicons name="create" size={18} color={COLORS.ACCENT} />
             <Text style={profileStyles.editProfileText}>Editar perfil</Text>
           </TouchableOpacity>
         </View>
@@ -291,7 +318,64 @@ export default function ProfileScreen() {
         </View>
 
         <View style={baseStyles.card}>
-          <TouchableOpacity style={profileStyles.actionButton} onPress={() => setSettingsModalVisible(true)}>
+          <View style={profileStyles.achievementsHeader}>
+            <View style={profileStyles.achievementsTitleContainer}>
+              <Ionicons name="trophy" size={24} color={COLORS.ACCENT} />
+              <Text style={profileStyles.achievementsTitle}>Logros</Text>
+            </View>
+            <View style={profileStyles.achievementsStats}>
+              <Text style={profileStyles.achievementsPoints}>{achievements.totalPoints || 0}</Text>
+              <Text style={profileStyles.achievementsPointsLabel}>puntos</Text>
+            </View>
+          </View>
+
+          <View style={profileStyles.achievementsGrid}>
+            {(achievements?.achievements || [])
+              .filter((achievement) => achievement.unlocked)
+              .slice(0, 6)
+              .map((achievement) => {
+                return (
+                  <AchievementBadge
+                    key={achievement.id}
+                    achievement={achievement}
+                    isUnlocked={true}
+                    size="small"
+                  />
+                );
+              })}
+
+            {(!achievements?.achievements ||
+              achievements.achievements.filter((a) => a.unlocked).length === 0) && (
+              <View style={profileStyles.noAchievements}>
+                <Ionicons name="trophy" size={32} color="#D1D5DB" />
+                <Text style={profileStyles.noAchievementsText}>Aún no tienes logros</Text>
+                <Text style={profileStyles.noAchievementsSubtext}>
+                  ¡Comienza a leer para desbloquear badges!
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {achievements?.achievements &&
+            achievements.achievements.filter((a) => a.unlocked).length > 6 && (
+              <TouchableOpacity
+                style={profileStyles.viewAllAchievements}
+                onPress={() => navigation.navigate('Achievements')}
+              >
+                <Text style={profileStyles.viewAllAchievementsText}>
+                  Ver todos los logros ({achievements.achievements.filter((a) => a.unlocked).length}
+                  )
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.ACCENT} />
+              </TouchableOpacity>
+            )}
+        </View>
+
+        <View style={baseStyles.card}>
+          <TouchableOpacity
+            style={profileStyles.actionButton}
+            onPress={() => setSettingsModalVisible(true)}
+          >
             <View style={profileStyles.actionIconContainer}>
               <Ionicons name="settings-outline" size={24} color={COLORS.ACCENT} />
             </View>
@@ -299,10 +383,13 @@ export default function ProfileScreen() {
               <Text style={profileStyles.actionTitle}>Configuración</Text>
               <Text style={profileStyles.actionSubtitle}>Privacidad, notificaciones y más</Text>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={COLORS.SUBT} />
+            <Ionicons name="chevron-forward" size={24} color={COLORS.SUBT} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={profileStyles.actionButton} onPress={() => setChangePasswordModalVisible(true)}>
+          <TouchableOpacity
+            style={profileStyles.actionButton}
+            onPress={() => setChangePasswordModalVisible(true)}
+          >
             <View style={profileStyles.actionIconContainer}>
               <Ionicons name="lock-closed-outline" size={24} color={COLORS.ACCENT} />
             </View>
@@ -310,25 +397,23 @@ export default function ProfileScreen() {
               <Text style={profileStyles.actionTitle}>Cambiar contraseña</Text>
               <Text style={profileStyles.actionSubtitle}>Actualiza tu contraseña de acceso</Text>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={COLORS.SUBT} />
+            <Ionicons name="chevron-forward" size={24} color={COLORS.SUBT} />
           </TouchableOpacity>
         </View>
 
         <View style={baseStyles.card}>
           <View style={profileStyles.infoItem}>
-            <MaterialIcons name="email" size={20} color={COLORS.SUBT} />
+            <Ionicons name="mail" size={20} color={COLORS.SUBT} />
             <Text style={profileStyles.infoText}>{user.email}</Text>
           </View>
           <View style={profileStyles.infoItem}>
-            <MaterialIcons name="calendar-today" size={20} color={COLORS.SUBT} />
-            <Text style={profileStyles.infoText}>
-              Miembro desde {formatJoinDate(user)}
-            </Text>
+            <Ionicons name="calendar" size={20} color={COLORS.SUBT} />
+            <Text style={profileStyles.infoText}>Miembro desde {formatJoinDate(user)}</Text>
           </View>
         </View>
 
         <TouchableOpacity style={profileStyles.logoutButton} onPress={handleLogout}>
-          <MaterialIcons name="logout" size={20} color={COLORS.ERROR} />
+          <Ionicons name="log-out" size={20} color={COLORS.ERROR} />
           <Text style={profileStyles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -348,7 +433,7 @@ export default function ProfileScreen() {
               <View style={profileStyles.modalHeader}>
                 <Text style={profileStyles.modalTitle}>Editar perfil</Text>
                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color={COLORS.SUBT} />
+                  <Ionicons name="close" size={24} color={COLORS.SUBT} />
                 </TouchableOpacity>
               </View>
 
@@ -358,7 +443,7 @@ export default function ProfileScreen() {
                   <TextInput
                     style={profileStyles.input}
                     value={editData.name}
-                    onChangeText={(text) => setEditData(prev => ({ ...prev, name: text }))}
+                    onChangeText={(text) => setEditData((prev) => ({ ...prev, name: text }))}
                     placeholder="Tu nombre completo"
                   />
                 </View>
@@ -368,7 +453,7 @@ export default function ProfileScreen() {
                   <TextInput
                     style={profileStyles.input}
                     value={editData.username}
-                    onChangeText={(text) => setEditData(prev => ({ ...prev, username: text }))}
+                    onChangeText={(text) => setEditData((prev) => ({ ...prev, username: text }))}
                     placeholder="tu_usuario"
                     autoCapitalize="none"
                   />
@@ -379,7 +464,7 @@ export default function ProfileScreen() {
                   <TextInput
                     style={[profileStyles.input, profileStyles.bioInput]}
                     value={editData.bio}
-                    onChangeText={(text) => setEditData(prev => ({ ...prev, bio: text }))}
+                    onChangeText={(text) => setEditData((prev) => ({ ...prev, bio: text }))}
                     placeholder="Cuéntanos sobre ti..."
                     multiline
                     numberOfLines={3}
@@ -426,7 +511,7 @@ export default function ProfileScreen() {
               <View style={profileStyles.modalHeader}>
                 <Text style={profileStyles.modalTitle}>Cambiar contraseña</Text>
                 <TouchableOpacity onPress={() => setChangePasswordModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color="#666" />
+                  <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
 
@@ -436,7 +521,9 @@ export default function ProfileScreen() {
                   <TextInput
                     style={profileStyles.input}
                     value={passwordData.currentPassword}
-                    onChangeText={(text) => setPasswordData(prev => ({ ...prev, currentPassword: text }))}
+                    onChangeText={(text) =>
+                      setPasswordData((prev) => ({ ...prev, currentPassword: text }))
+                    }
                     placeholder="Ingresa tu contraseña actual"
                     secureTextEntry
                   />
@@ -447,7 +534,9 @@ export default function ProfileScreen() {
                   <TextInput
                     style={profileStyles.input}
                     value={passwordData.newPassword}
-                    onChangeText={(text) => setPasswordData(prev => ({ ...prev, newPassword: text }))}
+                    onChangeText={(text) =>
+                      setPasswordData((prev) => ({ ...prev, newPassword: text }))
+                    }
                     placeholder="Ingresa tu nueva contraseña"
                     secureTextEntry
                   />
@@ -458,7 +547,9 @@ export default function ProfileScreen() {
                   <TextInput
                     style={profileStyles.input}
                     value={passwordData.confirmPassword}
-                    onChangeText={(text) => setPasswordData(prev => ({ ...prev, confirmPassword: text }))}
+                    onChangeText={(text) =>
+                      setPasswordData((prev) => ({ ...prev, confirmPassword: text }))
+                    }
                     placeholder="Confirma tu nueva contraseña"
                     secureTextEntry
                   />
@@ -473,7 +564,10 @@ export default function ProfileScreen() {
                   <Text style={profileStyles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[profileStyles.saveButton, changingPassword && profileStyles.saveButtonDisabled]}
+                  style={[
+                    profileStyles.saveButton,
+                    changingPassword && profileStyles.saveButtonDisabled,
+                  ]}
                   onPress={handleChangePassword}
                   disabled={changingPassword}
                 >
@@ -504,18 +598,20 @@ export default function ProfileScreen() {
               <View style={profileStyles.modalHeader}>
                 <Text style={profileStyles.modalTitle}>Configuración</Text>
                 <TouchableOpacity onPress={() => setSettingsModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color="#666" />
+                  <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
 
               <ScrollView style={profileStyles.settingsContainer}>
                 <View style={profileStyles.settingsSection}>
                   <Text style={profileStyles.settingsSectionTitle}>Privacidad</Text>
-                  
+
                   <View style={profileStyles.settingItem}>
                     <View style={profileStyles.settingContent}>
                       <Text style={profileStyles.settingTitle}>Perfil privado</Text>
-                      <Text style={profileStyles.settingSubtitle}>Solo tus seguidores pueden ver tu actividad</Text>
+                      <Text style={profileStyles.settingSubtitle}>
+                        Solo tus seguidores pueden ver tu actividad
+                      </Text>
                     </View>
                     <Switch
                       value={privateProfile}
@@ -528,7 +624,9 @@ export default function ProfileScreen() {
                   <View style={profileStyles.settingItem}>
                     <View style={profileStyles.settingContent}>
                       <Text style={profileStyles.settingTitle}>Mostrar email</Text>
-                      <Text style={profileStyles.settingSubtitle}>Permitir que otros usuarios vean tu email</Text>
+                      <Text style={profileStyles.settingSubtitle}>
+                        Permitir que otros usuarios vean tu email
+                      </Text>
                     </View>
                     <Switch
                       value={showEmail}
@@ -541,11 +639,13 @@ export default function ProfileScreen() {
 
                 <View style={profileStyles.settingsSection}>
                   <Text style={profileStyles.settingsSectionTitle}>Notificaciones</Text>
-                  
+
                   <View style={profileStyles.settingItem}>
                     <View style={profileStyles.settingContent}>
                       <Text style={profileStyles.settingTitle}>Notificaciones push</Text>
-                      <Text style={profileStyles.settingSubtitle}>Recibir notificaciones de la aplicación</Text>
+                      <Text style={profileStyles.settingSubtitle}>
+                        Recibir notificaciones de la aplicación
+                      </Text>
                     </View>
                     <Switch
                       value={notificationsEnabled}
@@ -558,13 +658,18 @@ export default function ProfileScreen() {
 
                 <View style={profileStyles.settingsSection}>
                   <Text style={profileStyles.settingsSectionTitle}>Cuenta</Text>
-                  
-                  <TouchableOpacity style={profileStyles.settingButton} onPress={handleDeleteAccount}>
+
+                  <TouchableOpacity
+                    style={profileStyles.settingButton}
+                    onPress={handleDeleteAccount}
+                  >
                     <View style={profileStyles.settingContent}>
                       <Text style={profileStyles.settingTitle}>Eliminar cuenta</Text>
-                      <Text style={[profileStyles.settingSubtitle, { color: '#e63946' }]}>Eliminar permanentemente tu cuenta</Text>
+                      <Text style={[profileStyles.settingSubtitle, { color: '#e63946' }]}>
+                        Eliminar permanentemente tu cuenta
+                      </Text>
                     </View>
-                    <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+                    <Ionicons name="chevron-forward" size={24} color="#ccc" />
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -588,31 +693,34 @@ export default function ProfileScreen() {
               <View style={profileStyles.modalHeader}>
                 <Text style={profileStyles.modalTitle}>Eliminar cuenta</Text>
                 <TouchableOpacity onPress={() => setDeleteAccountModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color="#666" />
+                  <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
 
               <View style={profileStyles.deleteWarningContainer}>
                 <View style={profileStyles.warningIconContainer}>
-                  <MaterialIcons name="warning" size={48} color="#e63946" />
+                  <Ionicons name="warning" size={48} color="#e63946" />
                 </View>
-                
+
                 <Text style={profileStyles.warningTitle}>¡Atención!</Text>
                 <Text style={profileStyles.warningText}>
                   Esta acción es irreversible. Se eliminarán permanentemente:
                 </Text>
-                
+
                 <View style={profileStyles.warningList}>
                   <Text style={profileStyles.warningItem}>• Tu perfil y datos personales</Text>
                   <Text style={profileStyles.warningItem}>• Todas tus reseñas y favoritos</Text>
                   <Text style={profileStyles.warningItem}>• Tu historial de lectura</Text>
-                  <Text style={profileStyles.warningItem}>• Todas tus publicaciones y comentarios</Text>
+                  <Text style={profileStyles.warningItem}>
+                    • Todas tus publicaciones y comentarios
+                  </Text>
                 </View>
-                
+
                 <Text style={profileStyles.confirmationText}>
-                  Para confirmar, escribe <Text style={profileStyles.confirmationWord}>ELIMINAR</Text> en el campo de abajo:
+                  Para confirmar, escribe{' '}
+                  <Text style={profileStyles.confirmationWord}>ELIMINAR</Text> en el campo de abajo:
                 </Text>
-                
+
                 <TextInput
                   style={profileStyles.confirmationInput}
                   value={deleteConfirmation}
@@ -633,7 +741,10 @@ export default function ProfileScreen() {
                   <Text style={profileStyles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[profileStyles.deleteButton, deletingAccount && profileStyles.deleteButtonDisabled]}
+                  style={[
+                    profileStyles.deleteButton,
+                    deletingAccount && profileStyles.deleteButtonDisabled,
+                  ]}
                   onPress={confirmDeleteAccount}
                   disabled={deletingAccount}
                 >
@@ -664,7 +775,7 @@ export default function ProfileScreen() {
               <View style={profileStyles.modalHeader}>
                 <Text style={profileStyles.modalTitle}>Cambiar Avatar</Text>
                 <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color={COLORS.SUBT} />
+                  <Ionicons name="close" size={24} color={COLORS.SUBT} />
                 </TouchableOpacity>
               </View>
 
@@ -692,10 +803,7 @@ export default function ProfileScreen() {
                 >
                   <Text style={profileStyles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={profileStyles.saveButton}
-                  onPress={handleAvatarChange}
-                >
+                <TouchableOpacity style={profileStyles.saveButton} onPress={handleAvatarChange}>
                   <Text style={profileStyles.saveButtonText}>Actualizar</Text>
                 </TouchableOpacity>
               </View>

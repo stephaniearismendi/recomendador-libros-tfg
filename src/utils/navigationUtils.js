@@ -1,33 +1,34 @@
 export const getScreenOptions = (title = null) => {
   const baseOptions = { headerShown: false };
-  
+
   if (title) {
     return {
       ...baseOptions,
       headerShown: true,
-      title
+      title,
     };
   }
-  
+
   return baseOptions;
 };
 
 export const getAuthenticatedScreens = () => [
   { name: 'Tabs', component: 'TabNavigator' },
   { name: 'BookDetail', component: 'BookDetailScreen' },
-  { name: 'ClubRoom', component: 'ClubRoomScreen', title: 'Club de lectura' }
+  { name: 'ClubRoom', component: 'ClubRoomScreen', title: 'Club de lectura' },
+  { name: 'Achievements', component: 'AchievementsScreen' },
 ];
 
 export const getUnauthenticatedScreens = () => [
   { name: 'Login', component: 'LoginScreen' },
-  { name: 'Register', component: 'RegisterScreen' }
+  { name: 'Register', component: 'RegisterScreen' },
 ];
 
 export const validateAuthState = (token, loading) => {
   return {
     isAuthenticated: !!token,
     isLoading: !!loading,
-    shouldShowLoading: loading === true
+    shouldShowLoading: loading === true,
   };
 };
 

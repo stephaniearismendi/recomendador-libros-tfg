@@ -79,8 +79,8 @@ export const libraryStyles = StyleSheet.create({
     elevation: 2,
     minWidth: 80,
   },
-  chipPrimaryText: { 
-    color: '#fff', 
+  chipPrimaryText: {
+    color: '#fff',
     fontWeight: '700',
     fontFamily: 'Poppins-Bold',
     fontSize: 13,
@@ -94,13 +94,13 @@ export const libraryStyles = StyleSheet.create({
     borderRadius: 14,
     minWidth: 80,
   },
-  chipLightText: { 
-    color: COLORS.ACCENT, 
+  chipLightText: {
+    color: COLORS.ACCENT,
     fontWeight: '700',
     fontFamily: 'Poppins-Bold',
     fontSize: 13,
   },
-  emptyReading: { 
+  emptyReading: {
     gap: 16,
     alignItems: 'center',
     paddingVertical: 20,
@@ -117,17 +117,17 @@ export const libraryStyles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  ctaButtonText: { 
-    color: '#fff', 
+  ctaButtonText: {
+    color: '#fff',
     fontWeight: '700',
     fontFamily: 'Poppins-Bold',
     fontSize: 15,
   },
-  favList: { 
-    paddingVertical: 6, 
-    paddingLeft: 8, 
-    paddingRight: 8, 
-    gap: 8 
+  favList: {
+    paddingVertical: 6,
+    paddingLeft: 8,
+    paddingRight: 8,
+    gap: 8,
   },
   rowBetween: {
     flexDirection: 'row',
@@ -167,9 +167,9 @@ export const libraryStyles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#EEF2FF',
   },
-  modalCloseText: { 
-    color: '#5A4FFF', 
-    fontWeight: '700' 
+  modalCloseText: {
+    color: '#5A4FFF',
+    fontWeight: '700',
   },
   pickerItem: {
     flexDirection: 'row',
@@ -181,10 +181,10 @@ export const libraryStyles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
     marginVertical: 2,
   },
-  pickerCover: { 
-    width: 48, 
-    height: 72, 
-    borderRadius: 8, 
+  pickerCover: {
+    width: 48,
+    height: 72,
+    borderRadius: 8,
     backgroundColor: '#E5E7EB',
     shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
@@ -192,28 +192,28 @@ export const libraryStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  pickerTitle: { 
-    fontSize: 15, 
-    fontWeight: '600', 
+  pickerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.TEXT,
     fontFamily: 'Poppins-SemiBold',
     flex: 1,
   },
-  pickerAuthor: { 
-    fontSize: 13, 
+  pickerAuthor: {
+    fontSize: 13,
     color: COLORS.SUBT,
     fontFamily: 'Poppins-Regular',
     marginTop: 2,
   },
-  pickerAction: { 
-    fontSize: 13, 
-    color: COLORS.ACCENT, 
+  pickerAction: {
+    fontSize: 13,
+    color: COLORS.ACCENT,
     fontWeight: '700',
     fontFamily: 'Poppins-Bold',
   },
-  separator: { 
-    height: 1, 
-    backgroundColor: COLORS.BORDER, 
+  separator: {
+    height: 1,
+    backgroundColor: COLORS.BORDER,
     opacity: 0.8,
     marginVertical: 4,
   },
@@ -248,8 +248,8 @@ export const libraryStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  modalPrimaryText: { 
-    color: '#fff', 
+  modalPrimaryText: {
+    color: '#fff',
     fontWeight: '700',
     fontFamily: 'Poppins-Bold',
     fontSize: 14,
@@ -291,5 +291,26 @@ export const libraryStyles = StyleSheet.create({
     textAlign: 'center',
     color: '#6B7280',
     marginVertical: 8,
+  },
+  emptyAchievements: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  achievementsPreview: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
 });

@@ -67,7 +67,7 @@ export default function BookDetailScreen({ route }) {
             return;
           }
         } catch (dbError) {
-          // Continue to external API
+          // catches error if the book is not found in the database
         }
 
         const response = await getBookDetails(key);

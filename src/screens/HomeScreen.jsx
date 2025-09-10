@@ -5,11 +5,11 @@ import BookCard from '../components/BookCard';
 import { baseStyles, COLORS } from '../styles/baseStyles';
 import { homeStyles } from '../styles/components';
 import { useCustomSafeArea } from '../utils/safeAreaUtils';
-import { 
-  loadHomeData, 
-  applyGenreFilters, 
-  combineBookLists, 
-  getBookSections 
+import {
+  loadHomeData,
+  applyGenreFilters,
+  combineBookLists,
+  getBookSections,
 } from '../utils/homeUtils';
 
 export default function HomeScreen() {
@@ -51,14 +51,27 @@ export default function HomeScreen() {
     loadData();
   }, [loadData]);
 
+  const filteredPopular = useMemo(
+    () => applyGenreFilters(books, selectedFilters),
+    [books, selectedFilters],
+  );
+  const filteredAdapted = useMemo(
+    () => applyGenreFilters(adaptedBooks, selectedFilters),
+    [adaptedBooks, selectedFilters],
+  );
+  const filteredNytBooks = useMemo(
+    () => applyGenreFilters(nytBooks, selectedFilters),
+    [nytBooks, selectedFilters],
+  );
 
-
-  const filteredPopular = useMemo(() => applyGenreFilters(books, selectedFilters), [books, selectedFilters]);
-  const filteredAdapted = useMemo(() => applyGenreFilters(adaptedBooks, selectedFilters), [adaptedBooks, selectedFilters]);
-  const filteredNytBooks = useMemo(() => applyGenreFilters(nytBooks, selectedFilters), [nytBooks, selectedFilters]);
-
-  const allBooks = useMemo(() => combineBookLists(books, adaptedBooks, nytBooks), [books, adaptedBooks, nytBooks]);
-  const allFilteredBooks = useMemo(() => combineBookLists(filteredPopular, filteredAdapted, filteredNytBooks), [filteredPopular, filteredAdapted, filteredNytBooks]);
+  const allBooks = useMemo(
+    () => combineBookLists(books, adaptedBooks, nytBooks),
+    [books, adaptedBooks, nytBooks],
+  );
+  const allFilteredBooks = useMemo(
+    () => combineBookLists(filteredPopular, filteredAdapted, filteredNytBooks),
+    [filteredPopular, filteredAdapted, filteredNytBooks],
+  );
 
   const renderBookSection = (title, data, emptyMessage) => (
     <View style={homeStyles.section}>
@@ -105,7 +118,7 @@ export default function HomeScreen() {
 
   return (
     <View style={containerStyle}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={scrollStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -141,10 +154,12 @@ export default function HomeScreen() {
           filteredCount={allFilteredBooks.length}
         />
 
-        {getBookSections(filteredPopular, filteredAdapted, filteredNytBooks).map((section, index) =>
-          <View key={section.title || index}>
-            {renderBookSection(section.title, section.data, section.emptyMessage)}
-          </View>
+        {getBookSections(filteredPopular, filteredAdapted, filteredNytBooks).map(
+          (section, index) => (
+            <View key={section.title || index}>
+              {renderBookSection(section.title, section.data, section.emptyMessage)}
+            </View>
+          ),
         )}
       </ScrollView>
     </View>

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-// Paleta de colores consistente para toda la aplicación
+// Colors for the app
 export const COLORS = {
   ACCENT: '#5A4FFF',
   BG: '#F7F6F3',
@@ -15,7 +15,7 @@ export const COLORS = {
   INFO: '#3B82F6',
 };
 
-// Tipografías consistentes
+// Typography for the app
 export const TYPOGRAPHY = {
   heading: {
     fontSize: 28,
@@ -44,7 +44,6 @@ export const TYPOGRAPHY = {
   },
 };
 
-// Estilos base comunes
 export const baseStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -61,7 +60,6 @@ export const baseStyles = StyleSheet.create({
     paddingBottom: 40,
   },
   
-  // Cards consistentes
   card: {
     backgroundColor: COLORS.CARD,
     borderRadius: 20,
@@ -76,7 +74,6 @@ export const baseStyles = StyleSheet.create({
     borderColor: COLORS.BORDER,
   },
   
-  // Headers consistentes
   header: {
     marginBottom: 24,
     paddingVertical: 8,
@@ -105,7 +102,6 @@ export const baseStyles = StyleSheet.create({
     lineHeight: 20,
   },
   
-  // Secciones
   section: {
     marginBottom: 28,
   },
@@ -127,7 +123,7 @@ export const baseStyles = StyleSheet.create({
     marginTop: 4,
   },
   
-  // Botones consistentes
+  // Buttons
   button: {
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -216,7 +212,7 @@ export const baseStyles = StyleSheet.create({
     marginBottom: 8,
   },
   
-  // Estados de carga
+  // Loading states
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -230,7 +226,7 @@ export const baseStyles = StyleSheet.create({
     color: COLORS.SUBT,
   },
   
-  // Estados vacíos
+  // Empty states
   emptyContainer: {
     alignItems: 'center',
     padding: 40,
@@ -243,7 +239,7 @@ export const baseStyles = StyleSheet.create({
     marginTop: 16,
   },
   
-  // Errores
+  // Errors
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -290,13 +286,13 @@ export const baseStyles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Espaciado consistente
+  // Consistent spacing
   gap8: { gap: 8 },
   gap12: { gap: 12 },
   gap16: { gap: 16 },
   gap20: { gap: 20 },
   
-  // Sombras consistentes
+  // Consistent shadows
   shadow: {
     shadowColor: COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },

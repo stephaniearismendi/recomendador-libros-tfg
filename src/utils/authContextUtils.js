@@ -26,7 +26,7 @@ export const deleteSecureItem = async (key) => {
 
 export const validateToken = (token) => {
   if (!token) return false;
-  
+
   try {
     const decoded = jwtDecode(token);
     const now = Date.now() / 1000;
@@ -38,7 +38,7 @@ export const validateToken = (token) => {
 
 export const getTokenData = (token) => {
   if (!token) return null;
-  
+
   try {
     return jwtDecode(token);
   } catch {
@@ -48,7 +48,7 @@ export const getTokenData = (token) => {
 
 export const validateUserData = (userData) => {
   if (!userData) return null;
-  
+
   return {
     id: userData.id,
     name: userData.name || userData.username || 'Usuario',
@@ -62,23 +62,23 @@ export const validateUserData = (userData) => {
     joinedAt: userData.joinedAt,
     joined_at: userData.joined_at,
     dateCreated: userData.dateCreated,
-    registrationDate: userData.registrationDate
+    registrationDate: userData.registrationDate,
   };
 };
 
 export const validateRegistrationData = (data) => {
   if (!data) return null;
-  
+
   const { name, username, email, password } = data;
-  
+
   if (!name || !username || !email || !password) {
     return null;
   }
-  
+
   return {
     name: String(name).trim(),
     username: String(username).trim(),
     email: String(email).trim().toLowerCase(),
-    password: String(password)
+    password: String(password),
   };
 };

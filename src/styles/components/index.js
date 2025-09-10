@@ -1,3 +1,6 @@
+export { achievementBadgeStyles } from './AchievementBadgeStyles';
+export { achievementNotificationStyles } from './AchievementNotificationStyles';
+export { achievementsStyles } from './AchievementsStyles';
 export { styles as AdvancedFiltersStyles } from './AdvancedFiltersStyles';
 export { styles as BookCardStyles } from './BookCardStyles';
 export { bookDetailStyles } from './BookDetailStyles';
